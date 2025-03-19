@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [termwiz-0.23.2] - 2025-03-19
+
+### 🐛 Bug Fixes
+
+- Tmux -CC error on %config-error (#6773)
+- Deal with Windows Terminal mouse move with no buttons SGR report
+
+### 💼 Other
+
+- Add update-changelog.sh
+- Fix panic when appending long runs to clusterline
+- Update for Unicode 16
+- Update for unicode 16
+- Add is_white_space_(char|grapheme) helper functions
+- Bump version
+
 ## [termwiz-0.23.0] - 2025-02-10
 
 ### 🚀 Features
