@@ -11,10 +11,13 @@
 //! [termwiz](https://docs.rs/termwiz/) crate if you don't want to have to research
 //! all those possible escape sequences for yourself.
 #![allow(clippy::upper_case_acronyms)]
+#![cfg_attr(not(feature = "std"), no_std)]
 use utf8parse::Parser as Utf8Parser;
 mod enums;
 use crate::enums::*;
 mod transitions;
+#[cfg(not(feature = "std"))]
+use heapless::Vec;
 
 use transitions::{ENTRY, EXIT, TRANSITIONS};
 
@@ -170,12 +173,14 @@ pub trait VTActor {
 
     /// Called when an APC string is terminated by ST
     /// `data` is the data contained within the APC sequence.
+    #[cfg(feature = "std")]
     fn apc_dispatch(&mut self, data: Vec<u8>);
 }
 
 /// `VTAction` is an alternative way to work with the parser; rather
 /// than implementing the VTActor trait you can use `CollectingVTActor`
 /// to capture the sequence of events into a `Vec<VTAction>`.
+#[cfg(feature = "std")]
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum VTAction {
     Print(char),
@@ -207,11 +212,13 @@ pub enum VTAction {
 /// into an internal vector.
 /// It can be iterated via `into_iter` or have the internal
 /// vector extracted via `into_vec`.
+#[cfg(feature = "std")]
 #[derive(Default)]
 pub struct CollectingVTActor {
     actions: Vec<VTAction>,
 }
 
+#[cfg(feature = "std")]
 impl IntoIterator for CollectingVTActor {
     type Item = VTAction;
     type IntoIter = std::vec::IntoIter<VTAction>;
@@ -221,12 +228,14 @@ impl IntoIterator for CollectingVTActor {
     }
 }
 
+#[cfg(feature = "std")]
 impl CollectingVTActor {
     pub fn into_vec(self) -> Vec<VTAction> {
         self.actions
     }
 }
 
+#[cfg(feature = "std")]
 impl VTActor for CollectingVTActor {
     fn print(&mut self, b: char) {
         self.actions.push(VTAction::Print(b));
@@ -298,7 +307,10 @@ const MAX_OSC: usize = 64;
 const MAX_PARAMS: usize = 32;
 
 struct OscState {
+    #[cfg(feature = "std")]
     buffer: Vec<u8>,
+    #[cfg(not(feature = "std"))]
+    buffer: heapless::Vec<u8, { MAX_OSC * 16 }>,
     param_indices: [usize; MAX_OSC],
     num_params: usize,
     full: bool,
@@ -317,13 +329,24 @@ impl OscState {
                 }
             }
         } else if !self.full {
+            let mut buf = [0u8; 8];
+            let extend_result = self
+                .buffer
+                .extend_from_slice(param.encode_utf8(&mut buf).as_bytes());
+
+            #[cfg(not(feature = "std"))]
+            {
+                if extend_result.is_err() {
+                    self.full = true;
+                    return;
+                }
+            }
+
+            let _ = extend_result;
+
             if self.num_params == 0 {
                 self.num_params = 1;
             }
-
-            let mut buf = [0u8; 8];
-            self.buffer
-                .extend_from_slice(param.encode_utf8(&mut buf).as_bytes());
         }
     }
 }
@@ -342,6 +365,7 @@ pub struct VTParser {
     num_params: usize,
     current_param: Option<CsiParam>,
     params_full: bool,
+    #[cfg(feature = "std")]
     apc_data: Vec<u8>,
 
     utf8_parser: Utf8Parser,
@@ -388,8 +412,8 @@ impl CsiParam {
     }
 }
 
-impl std::fmt::Display for CsiParam {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+impl core::fmt::Display for CsiParam {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
         match self {
             CsiParam::Integer(v) => {
                 write!(f, "{}", v)?;
@@ -428,6 +452,7 @@ impl VTParser {
             current_param: None,
 
             utf8_parser: Utf8Parser::new(),
+            #[cfg(feature = "std")]
             apc_data: vec![],
         }
     }
@@ -492,6 +517,7 @@ impl VTParser {
                 self.num_params = 0;
                 self.params_full = false;
                 self.current_param.take();
+                #[cfg(feature = "std")]
                 self.apc_data.clear();
             }
             Action::Collect => {
@@ -591,12 +617,15 @@ impl VTParser {
             }
 
             Action::ApcStart => {
+                #[cfg(feature = "std")]
                 self.apc_data.clear();
             }
             Action::ApcPut => {
+                #[cfg(feature = "std")]
                 self.apc_data.push(param);
             }
             Action::ApcEnd => {
+                #[cfg(feature = "std")]
                 actor.apc_dispatch(std::mem::take(&mut self.apc_data));
             }
 
@@ -623,7 +652,7 @@ impl VTParser {
             }
 
             fn invalid_sequence(&mut self) {
-                self.codepoint(std::char::REPLACEMENT_CHARACTER);
+                self.codepoint(char::REPLACEMENT_CHARACTER);
             }
         }
 

@@ -10,7 +10,13 @@ documentation = "https://docs.rs/vtparse"
 keywords = ["terminal", "escape", "ansi", "sequence", "parser"]
 readme = "README.md"
 
+[features]
+default = ["std"]
+std = []
+no_std = ["dep:heapless"]
+
 [dependencies]
+heapless = {workspace = true, optional = true }
 utf8parse.workspace = true
 
 [dev-dependencies]
