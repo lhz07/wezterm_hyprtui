@@ -12,6 +12,7 @@ readme = "README.md"
 
 [features]
 default = ["std"]
+alloc = []
 std = []
 no_std = ["dep:heapless"]
 

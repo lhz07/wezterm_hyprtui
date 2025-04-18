@@ -16,7 +16,13 @@ use utf8parse::Parser as Utf8Parser;
 mod enums;
 use crate::enums::*;
 mod transitions;
-#[cfg(not(feature = "std"))]
+
+#[cfg(any(feature = "std", feature = "alloc"))]
+extern crate alloc;
+
+#[cfg(any(feature = "std", feature = "alloc"))]
+use alloc::vec::Vec;
+#[cfg(all(not(feature = "std"), not(feature = "alloc")))]
 use heapless::Vec;
 
 use transitions::{ENTRY, EXIT, TRANSITIONS};
@@ -173,14 +179,14 @@ pub trait VTActor {
 
     /// Called when an APC string is terminated by ST
     /// `data` is the data contained within the APC sequence.
-    #[cfg(feature = "std")]
+    #[cfg(any(feature = "std", feature = "alloc"))]
     fn apc_dispatch(&mut self, data: Vec<u8>);
 }
 
 /// `VTAction` is an alternative way to work with the parser; rather
 /// than implementing the VTActor trait you can use `CollectingVTActor`
 /// to capture the sequence of events into a `Vec<VTAction>`.
-#[cfg(feature = "std")]
+#[cfg(any(feature = "std", feature = "alloc"))]
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum VTAction {
     Print(char),
@@ -212,30 +218,30 @@ pub enum VTAction {
 /// into an internal vector.
 /// It can be iterated via `into_iter` or have the internal
 /// vector extracted via `into_vec`.
-#[cfg(feature = "std")]
+#[cfg(any(feature = "std", feature = "alloc"))]
 #[derive(Default)]
 pub struct CollectingVTActor {
     actions: Vec<VTAction>,
 }
 
-#[cfg(feature = "std")]
+#[cfg(any(feature = "std", feature = "alloc"))]
 impl IntoIterator for CollectingVTActor {
     type Item = VTAction;
-    type IntoIter = std::vec::IntoIter<VTAction>;
+    type IntoIter = alloc::vec::IntoIter<VTAction>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.actions.into_iter()
     }
 }
 
-#[cfg(feature = "std")]
+#[cfg(any(feature = "std", feature = "alloc"))]
 impl CollectingVTActor {
     pub fn into_vec(self) -> Vec<VTAction> {
         self.actions
     }
 }
 
-#[cfg(feature = "std")]
+#[cfg(any(feature = "std", feature = "alloc"))]
 impl VTActor for CollectingVTActor {
     fn print(&mut self, b: char) {
         self.actions.push(VTAction::Print(b));
@@ -307,9 +313,9 @@ const MAX_OSC: usize = 64;
 const MAX_PARAMS: usize = 32;
 
 struct OscState {
-    #[cfg(feature = "std")]
+    #[cfg(any(feature = "std", feature = "alloc"))]
     buffer: Vec<u8>,
-    #[cfg(not(feature = "std"))]
+    #[cfg(not(any(feature = "std", feature = "alloc")))]
     buffer: heapless::Vec<u8, { MAX_OSC * 16 }>,
     param_indices: [usize; MAX_OSC],
     num_params: usize,
@@ -334,7 +340,7 @@ impl OscState {
                 .buffer
                 .extend_from_slice(param.encode_utf8(&mut buf).as_bytes());
 
-            #[cfg(not(feature = "std"))]
+            #[cfg(all(not(feature = "std"), not(feature = "alloc")))]
             {
                 if extend_result.is_err() {
                     self.full = true;
@@ -365,7 +371,7 @@ pub struct VTParser {
     num_params: usize,
     current_param: Option<CsiParam>,
     params_full: bool,
-    #[cfg(feature = "std")]
+    #[cfg(any(feature = "std", feature = "alloc"))]
     apc_data: Vec<u8>,
 
     utf8_parser: Utf8Parser,
@@ -452,8 +458,8 @@ impl VTParser {
             current_param: None,
 
             utf8_parser: Utf8Parser::new(),
-            #[cfg(feature = "std")]
-            apc_data: vec![],
+            #[cfg(any(feature = "std", feature = "alloc"))]
+            apc_data: Vec::new(),
         }
     }
 
@@ -517,8 +523,13 @@ impl VTParser {
                 self.num_params = 0;
                 self.params_full = false;
                 self.current_param.take();
-                #[cfg(feature = "std")]
-                self.apc_data.clear();
+                #[cfg(any(feature = "std", feature = "alloc"))]
+                {
+                    self.apc_data.clear();
+                    self.apc_data.shrink_to_fit();
+                    self.osc.buffer.clear();
+                    self.osc.buffer.shrink_to_fit();
+                }
             }
             Action::Collect => {
                 if self.num_intermediates < MAX_INTERMEDIATES {
@@ -591,6 +602,8 @@ impl VTParser {
             Action::Unhook => actor.dcs_unhook(),
             Action::OscStart => {
                 self.osc.buffer.clear();
+                #[cfg(any(feature = "std", feature = "alloc"))]
+                self.osc.buffer.shrink_to_fit();
                 self.osc.num_params = 0;
                 self.osc.full = false;
             }
@@ -617,16 +630,19 @@ impl VTParser {
             }
 
             Action::ApcStart => {
-                #[cfg(feature = "std")]
-                self.apc_data.clear();
+                #[cfg(any(feature = "std", feature = "alloc"))]
+                {
+                    self.apc_data.clear();
+                    self.apc_data.shrink_to_fit();
+                }
             }
             Action::ApcPut => {
-                #[cfg(feature = "std")]
+                #[cfg(any(feature = "std", feature = "alloc"))]
                 self.apc_data.push(param);
             }
             Action::ApcEnd => {
-                #[cfg(feature = "std")]
-                actor.apc_dispatch(std::mem::take(&mut self.apc_data));
+                #[cfg(any(feature = "std", feature = "alloc"))]
+                actor.apc_dispatch(core::mem::take(&mut self.apc_data));
             }
 
             Action::Utf8 => self.next_utf8(actor, param),
