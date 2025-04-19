@@ -6661,6 +6661,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "wezterm-escape-parser"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "bitflags 2.9.0",
+ "criterion",
+ "env_logger 0.11.8",
+ "hex",
+ "image",
+ "k9",
+ "log",
+ "nix",
+ "num-derive",
+ "num-traits",
+ "ordered-float 4.6.0",
+ "pest",
+ "pest_derive",
+ "serde",
+ "sha2",
+ "thiserror 1.0.69",
+ "vtparse",
+ "wezterm-blob-leases",
+ "wezterm-color-types",
+ "wezterm-dynamic",
+ "wezterm-input-types",
+]
+
+[[package]]
 name = "wezterm-font"
 version = "0.1.0"
 dependencies = [
