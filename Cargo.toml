@@ -244,6 +244,7 @@ wezterm-color-types = { version="0.3", path = "color-types" }
 wezterm-config-derive = { version="0.1", path="config/derive" }
 wezterm-dynamic = { version = "0.2.1", path = "wezterm-dynamic" }
 wezterm-dynamic-derive = { version="0.1.1", path="wezterm-dynamic/derive" }
+wezterm-escape-parser = { version="0.1.0", path="wezterm-escape-parser" }
 wezterm-font = { path = "wezterm-font" }
 wezterm-gui-subcommands = { path = "wezterm-gui-subcommands" }
 wezterm-input-types = { version="0.1", path = "wezterm-input-types" }

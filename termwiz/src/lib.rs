@@ -51,7 +51,6 @@ pub mod cell;
 pub mod cellcluster;
 pub mod color;
 pub mod error;
-pub mod escape;
 pub mod hyperlink;
 #[cfg(feature = "image")]
 pub mod image;
@@ -67,8 +66,10 @@ pub mod render;
 pub mod surface;
 pub mod terminal;
 #[cfg(feature = "tmux_cc")]
-pub mod tmux_cc;
+pub use wezterm_escape_parser::tmux_cc;
 #[cfg(feature = "widgets")]
 pub mod widgets;
 
 pub use error::{Context, Error, Result};
+
+pub use wezterm_escape_parser as escape;

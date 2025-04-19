@@ -43,15 +43,16 @@ wezterm-bidi.workspace = true
 wezterm-blob-leases = {workspace=true, optional=true}
 wezterm-color-types.workspace = true
 wezterm-dynamic.workspace = true
+wezterm-escape-parser.workspace = true
 wezterm-input-types.workspace = true
 
 [features]
 default = ["image", "tmux_cc"]
 widgets = ["cassowary", "fnv"]
-use_serde = ["serde", "wezterm-color-types/use_serde", "wezterm-blob-leases/serde", "bitflags/serde", "wezterm-input-types/serde"]
-use_image = ["image", "dep:image"]
-image = ["sha2", "wezterm-blob-leases"]
-tmux_cc = ["pest", "pest_derive"]
+use_serde = ["serde", "wezterm-color-types/use_serde", "wezterm-blob-leases/serde", "bitflags/serde", "wezterm-input-types/serde", "wezterm-escape-parser/use_serde"]
+use_image = ["image", "dep:image", "wezterm-escape-parser/use_image", "wezterm-escape-parser/kitty-shm"]
+image = ["sha2", "wezterm-blob-leases", "wezterm-escape-parser/image"]
+tmux_cc = ["pest", "pest_derive", "wezterm-escape-parser/tmux_cc"]
 docs = ["widgets", "use_serde", "image", "tmux_cc"]
 
 [dev-dependencies]
