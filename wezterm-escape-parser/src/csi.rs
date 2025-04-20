@@ -144,14 +144,14 @@ pub enum CSI {
 #[cfg(all(test, target_pointer_width = "64"))]
 #[test]
 fn csi_size() {
-    assert_eq!(std::mem::size_of::<Sgr>(), 24);
-    assert_eq!(std::mem::size_of::<Cursor>(), 12);
-    assert_eq!(std::mem::size_of::<Edit>(), 8);
-    assert_eq!(std::mem::size_of::<Mode>(), 24);
-    assert_eq!(std::mem::size_of::<MouseReport>(), 8);
-    assert_eq!(std::mem::size_of::<Window>(), 40);
-    assert_eq!(std::mem::size_of::<Keyboard>(), 8);
-    assert_eq!(std::mem::size_of::<CSI>(), 32);
+    assert_eq!(core::mem::size_of::<Sgr>(), 24);
+    assert_eq!(core::mem::size_of::<Cursor>(), 12);
+    assert_eq!(core::mem::size_of::<Edit>(), 8);
+    assert_eq!(core::mem::size_of::<Mode>(), 24);
+    assert_eq!(core::mem::size_of::<MouseReport>(), 8);
+    assert_eq!(core::mem::size_of::<Window>(), 40);
+    assert_eq!(core::mem::size_of::<Keyboard>(), 8);
+    assert_eq!(core::mem::size_of::<CSI>(), 32);
 }
 
 pub use wezterm_input_types::KittyKeyboardFlags;
@@ -1488,11 +1488,11 @@ pub enum Sgr {
 #[cfg(all(test, target_pointer_width = "64"))]
 #[test]
 fn sgr_size() {
-    assert_eq!(std::mem::size_of::<Intensity>(), 1);
-    assert_eq!(std::mem::size_of::<Underline>(), 1);
-    assert_eq!(std::mem::size_of::<ColorSpec>(), 20);
-    assert_eq!(std::mem::size_of::<Blink>(), 1);
-    assert_eq!(std::mem::size_of::<Font>(), 2);
+    assert_eq!(core::mem::size_of::<Intensity>(), 1);
+    assert_eq!(core::mem::size_of::<Underline>(), 1);
+    assert_eq!(core::mem::size_of::<ColorSpec>(), 20);
+    assert_eq!(core::mem::size_of::<Blink>(), 1);
+    assert_eq!(core::mem::size_of::<Font>(), 2);
 }
 
 impl Display for Sgr {
@@ -2977,7 +2977,7 @@ impl<'a> Iterator for CSIParser<'a> {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "std"))]
 mod test {
     use super::*;
     use std::io::Write;
@@ -2991,8 +2991,7 @@ mod test {
             cparams.push(CsiParam::Integer(p));
         }
         let res = CSI::parse(&cparams, false, control).collect();
-        println!("parsed -> {:#?}", res);
-        assert_eq!(encode(&res), expected);
+        assert_eq!(encode(&res), expected, "parsed -> {res:?}");
         res
     }
 

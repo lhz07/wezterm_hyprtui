@@ -5674,7 +5674,6 @@ dependencies = [
  "thiserror 1.0.69",
  "ucd-trie",
  "unicode-segmentation",
- "varbincode",
  "vtparse",
  "wezterm-bidi",
  "wezterm-blob-leases",

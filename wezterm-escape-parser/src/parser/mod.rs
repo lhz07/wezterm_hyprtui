@@ -346,7 +346,7 @@ impl<'a, F: FnMut(Action)> VTActor for Performer<'a, F> {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "std"))]
 mod test {
     use super::*;
     use crate::color::ColorSpec;
@@ -740,16 +740,14 @@ mod test {
     fn round_trip_parse(s: &str) -> Vec<Action> {
         let mut p = Parser::new();
         let actions = p.parse_as_vec(s.as_bytes());
-        println!("actions: {:?}", actions);
-        assert_eq!(s, encode(&actions));
+        assert_eq!(s, encode(&actions), "actions: {actions:?}");
         actions
     }
 
     fn parse_as(s: &str, expected: &str) -> Vec<Action> {
         let mut p = Parser::new();
         let actions = p.parse_as_vec(s.as_bytes());
-        println!("actions: {:?}", actions);
-        assert_eq!(expected, encode(&actions));
+        assert_eq!(expected, encode(&actions), "actions: {actions:?}");
         actions
     }
 

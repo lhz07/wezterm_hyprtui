@@ -90,11 +90,11 @@ impl Action {
 #[cfg(all(test, target_pointer_width = "64"))]
 #[test]
 fn action_size() {
-    assert_eq!(std::mem::size_of::<Action>(), 32);
-    assert_eq!(std::mem::size_of::<DeviceControlMode>(), 16);
-    assert_eq!(std::mem::size_of::<ControlCode>(), 1);
-    assert_eq!(std::mem::size_of::<CSI>(), 32);
-    assert_eq!(std::mem::size_of::<Esc>(), 4);
+    assert_eq!(core::mem::size_of::<Action>(), 32);
+    assert_eq!(core::mem::size_of::<DeviceControlMode>(), 16);
+    assert_eq!(core::mem::size_of::<ControlCode>(), 1);
+    assert_eq!(core::mem::size_of::<CSI>(), 32);
+    assert_eq!(core::mem::size_of::<Esc>(), 4);
 }
 
 /// Encode self as an escape sequence.  The escape sequence may potentially

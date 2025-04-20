@@ -190,6 +190,7 @@ mod test {
     use super::*;
     use crate::parser::Parser;
     use crate::{Action, Esc, EscCode};
+    use alloc::boxed::Box;
     use k9::assert_equal as assert_eq;
 
     #[test]

@@ -254,3 +254,31 @@ impl From<SrgbaTuple> for ColorSpec {
         ColorSpec::TrueColor(col)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn from_hsl() {
+        let foo = RgbColor::from_rgb_str("hsl:235 100  50").unwrap();
+        assert_eq!(foo.to_rgb_string(), "#0015ff");
+    }
+
+    #[test]
+    fn from_rgb() {
+        assert!(RgbColor::from_rgb_str("").is_none());
+        assert!(RgbColor::from_rgb_str("#xyxyxy").is_none());
+
+        let black = RgbColor::from_rgb_str("#FFF").unwrap();
+        assert_eq!(black.to_tuple_rgb8(), (0xf0, 0xf0, 0xf0));
+
+        let black = RgbColor::from_rgb_str("#000000").unwrap();
+        assert_eq!(black.to_tuple_rgb8(), (0, 0, 0));
+
+        let grey = RgbColor::from_rgb_str("rgb:D6/D6/D6").unwrap();
+        assert_eq!(grey.to_tuple_rgb8(), (0xd6, 0xd6, 0xd6));
+
+        let grey = RgbColor::from_rgb_str("rgb:f0f0/f0f0/f0f0").unwrap();
+        assert_eq!(grey.to_tuple_rgb8(), (0xf0, 0xf0, 0xf0));
+    }
+}

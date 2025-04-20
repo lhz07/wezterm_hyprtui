@@ -1,5 +1,6 @@
 use crate::array::Array;
 use crate::object::Object;
+#[allow(unused)]
 #[cfg(not(feature = "std"))]
 use ordered_float::FloatCore;
 use ordered_float::OrderedFloat;

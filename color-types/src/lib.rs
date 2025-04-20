@@ -5,6 +5,7 @@ use core::str::FromStr;
 #[cfg(feature = "std")]
 use csscolorparser::Color;
 #[cfg(not(feature = "std"))]
+#[allow(unused)]
 use num_traits::float::Float;
 #[cfg(feature = "use_serde")]
 use serde::{Deserialize, Serialize};

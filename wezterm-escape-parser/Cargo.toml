@@ -31,7 +31,7 @@ wezterm-dynamic.workspace = true
 wezterm-input-types = {workspace = true, default-features=false}
 
 [features]
-std = ["vtparse/std", "thiserror/std", "wezterm-input-types/std", "hex/std"]
+std = ["vtparse/std", "thiserror/std", "wezterm-input-types/std", "hex/std", "wezterm-dynamic/std"]
 kitty-shm = ["dep:nix"]
 use_serde = ["dep:serde", "wezterm-color-types/use_serde", "wezterm-blob-leases/serde", "bitflags/serde", "wezterm-input-types/serde"]
 use_image = ["image", "dep:image"]
