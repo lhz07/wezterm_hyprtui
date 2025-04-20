@@ -4,6 +4,8 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 pub use wezterm_color_types::{LinearRgba, SrgbaTuple};
 use wezterm_dynamic::{FromDynamic, FromDynamicOptions, ToDynamic, Value};
 
+use crate::allocate::*;
+
 #[derive(Debug, Clone, Copy, FromPrimitive, PartialEq, Eq, FromDynamic, ToDynamic)]
 #[cfg_attr(feature = "use_serde", derive(Serialize, Deserialize))]
 #[repr(u8)]

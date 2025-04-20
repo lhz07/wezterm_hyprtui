@@ -1,6 +1,6 @@
+use core::fmt::{Display, Error as FmtError, Formatter, Write as FmtWrite};
 use num_derive::*;
 use num_traits::{FromPrimitive, ToPrimitive};
-use std::fmt::{Display, Error as FmtError, Formatter, Write as FmtWrite};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Esc {

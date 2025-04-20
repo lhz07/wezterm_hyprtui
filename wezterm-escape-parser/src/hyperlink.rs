@@ -1,9 +1,10 @@
 use crate::{Result, ensure, format_err};
+use core::hash::{Hash, Hasher};
 #[cfg(feature = "use_serde")]
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::hash::{Hash, Hasher};
 use wezterm_dynamic::{FromDynamic, ToDynamic};
+
+use crate::allocate::*;
 
 #[cfg_attr(feature = "use_serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq, FromDynamic, ToDynamic)]

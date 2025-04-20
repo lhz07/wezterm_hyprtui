@@ -1,14 +1,16 @@
 use super::OneBased;
 use crate::color::{AnsiColor, ColorSpec, RgbColor, SrgbaTuple};
 use bitflags::bitflags;
+use core::convert::TryInto;
+use core::fmt::{Display, Error as FmtError, Formatter};
 use num_derive::*;
 use num_traits::{FromPrimitive, ToPrimitive};
 #[cfg(feature = "use_serde")]
 use serde::{Deserialize, Serialize};
-use std::convert::TryInto;
-use std::fmt::{Display, Error as FmtError, Formatter};
 use wezterm_dynamic::{FromDynamic, ToDynamic};
 use wezterm_input_types::Modifiers;
+
+use crate::allocate::*;
 
 pub use vtparse::CsiParam;
 

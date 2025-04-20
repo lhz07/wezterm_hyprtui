@@ -5,12 +5,14 @@ use crate::{
     Action, CSI, DeviceControlMode, EnterDeviceControlMode, Esc, OperatingSystemCommand,
     ShortDeviceControl,
 };
+#[cfg(feature = "tmux_cc")]
+use core::borrow::BorrowMut;
+use core::cell::RefCell;
 use log::error;
 use num_traits::FromPrimitive;
-#[cfg(feature = "tmux_cc")]
-use std::borrow::BorrowMut;
-use std::cell::RefCell;
 use vtparse::{CsiParam, VTActor, VTParser};
+
+use crate::allocate::*;
 
 mod sixel;
 use sixel::SixelBuilder;

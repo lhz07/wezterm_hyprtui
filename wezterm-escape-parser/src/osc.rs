@@ -1,16 +1,18 @@
 use crate::color::SrgbaTuple;
 pub use crate::hyperlink::Hyperlink;
-use crate::{Result, bail, ensure};
+use crate::{Result, bail, ensure, format_err};
 use base64::Engine;
 use bitflags::bitflags;
+use core::fmt::{Display, Error as FmtError, Formatter, Result as FmtResult};
+use core::str;
+use core::str::FromStr;
 use num_derive::*;
 use num_traits::FromPrimitive;
 use ordered_float::NotNan;
-use std::collections::HashMap;
-use std::fmt::{Display, Error as FmtError, Formatter, Result as FmtResult};
-use std::str;
-use std::str::FromStr;
+#[cfg(feature = "std")]
 use std::sync::LazyLock;
+
+use crate::allocate::*;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ColorOrQuery {
@@ -409,6 +411,7 @@ pub enum OperatingSystemCommandCode {
 }
 
 impl OscMap {
+#[cfg(feature = "std")]
     fn new() -> Self {
         let mut code_to_variant = HashMap::new();
         let mut variant_to_code = HashMap::new();
@@ -425,6 +428,28 @@ impl OscMap {
             variant_to_code,
         }
     }
+
+#[cfg(not(feature = "std"))]
+    fn linear_search_code(code: &str) -> Option<OperatingSystemCommandCode> {
+        use OperatingSystemCommandCode::*;
+        match code {
+        $(
+            $value => Some($label),
+        )*
+            _ => None,
+        }
+    }
+
+#[cfg(not(feature = "std"))]
+    fn linear_search_variant(v: &OperatingSystemCommandCode) -> &'static str {
+        use OperatingSystemCommandCode::*;
+        match *v {
+        $(
+            $label => $value,
+        )*
+        }
+    }
+
 }
     };
 }
@@ -480,12 +505,16 @@ osc_entries!(
 );
 
 struct OscMap {
+    #[cfg(feature = "std")]
     code_to_variant: HashMap<&'static str, OperatingSystemCommandCode>,
+    #[cfg(feature = "std")]
     variant_to_code: HashMap<OperatingSystemCommandCode, &'static str>,
 }
 
+#[cfg(feature = "std")]
 static OSC_MAP: LazyLock<OscMap> = LazyLock::new(OscMap::new);
 
+#[cfg(feature = "std")]
 impl OperatingSystemCommandCode {
     fn from_code(code: &str) -> Option<Self> {
         OSC_MAP.code_to_variant.get(code).copied()
@@ -493,6 +522,17 @@ impl OperatingSystemCommandCode {
 
     fn as_code(self) -> &'static str {
         OSC_MAP.variant_to_code.get(&self).unwrap()
+    }
+}
+
+#[cfg(not(feature = "std"))]
+impl OperatingSystemCommandCode {
+    fn from_code(code: &str) -> Option<Self> {
+        OscMap::linear_search_code(code)
+    }
+
+    fn as_code(self) -> &'static str {
+        OscMap::linear_search_variant(&self)
     }
 }
 
@@ -592,7 +632,7 @@ pub enum FinalTermClick {
     SmartVertical,
 }
 
-impl std::convert::TryFrom<&str> for FinalTermClick {
+impl core::convert::TryFrom<&str> for FinalTermClick {
     type Error = crate::Error;
     fn try_from(s: &str) -> Result<Self> {
         match s {
@@ -635,7 +675,7 @@ impl Default for FinalTermPromptKind {
     }
 }
 
-impl std::convert::TryFrom<&str> for FinalTermPromptKind {
+impl core::convert::TryFrom<&str> for FinalTermPromptKind {
     type Error = crate::Error;
     fn try_from(s: &str) -> Result<Self> {
         match s {
@@ -722,7 +762,7 @@ impl FinalTermSemanticPrompt {
         single!(MarkEndOfPromptAndStartOfInputUntilEndOfLine, "I");
 
         let mut params = HashMap::new();
-        use std::convert::TryInto;
+        use core::convert::TryInto;
 
         for s in osc.iter().skip(if param == "D" { 3 } else { 2 }) {
             if let Some(equal) = s.iter().position(|c| *c == b'=') {
@@ -1021,7 +1061,7 @@ impl Display for ITermFileData {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
         write!(f, "File")?;
         let mut sep = "=";
-        let emit_sep = |sep, f: &mut Formatter| -> std::result::Result<&str, FmtError> {
+        let emit_sep = |sep, f: &mut Formatter| -> core::result::Result<&str, FmtError> {
             write!(f, "{}", sep)?;
             Ok(";")
         };
@@ -1089,7 +1129,7 @@ impl Display for ITermDimension {
     }
 }
 
-impl std::str::FromStr for ITermDimension {
+impl core::str::FromStr for ITermDimension {
     type Err = crate::Error;
     fn from_str(s: &str) -> Result<Self> {
         ITermDimension::parse(s)
@@ -1203,8 +1243,9 @@ impl ITermProprietary {
         if osc.len() == 3 && keyword == "ReportCellSize" && p1.is_some() {
             if let Some(p1) = p1 {
                 return Ok(ITermProprietary::ReportCellSize {
-                    height_pixels: NotNan::new(p1.parse()?)?,
-                    width_pixels: NotNan::new(String::from_utf8_lossy(osc[2]).parse()?)?,
+                    height_pixels: NotNan::new(p1.parse()?).map_err(not_nan_err)?,
+                    width_pixels: NotNan::new(String::from_utf8_lossy(osc[2]).parse()?)
+                        .map_err(not_nan_err)?,
                     scale: None,
                 });
             }
@@ -1212,9 +1253,13 @@ impl ITermProprietary {
         if osc.len() == 4 && keyword == "ReportCellSize" && p1.is_some() {
             if let Some(p1) = p1 {
                 return Ok(ITermProprietary::ReportCellSize {
-                    height_pixels: NotNan::new(p1.parse()?)?,
-                    width_pixels: NotNan::new(String::from_utf8_lossy(osc[2]).parse()?)?,
-                    scale: Some(NotNan::new(String::from_utf8_lossy(osc[3]).parse()?)?),
+                    height_pixels: NotNan::new(p1.parse()?).map_err(not_nan_err)?,
+                    width_pixels: NotNan::new(String::from_utf8_lossy(osc[2]).parse()?)
+                        .map_err(not_nan_err)?,
+                    scale: Some(
+                        NotNan::new(String::from_utf8_lossy(osc[3]).parse()?)
+                            .map_err(not_nan_err)?,
+                    ),
                 });
             }
         }
@@ -1273,15 +1318,14 @@ pub(crate) fn base64_encode<T: AsRef<[u8]>>(s: T) -> String {
 }
 
 /// base64::decode is deprecated, so make a less frustrating helper
-pub(crate) fn base64_decode<T: AsRef<[u8]>>(
-    s: T,
-) -> std::result::Result<Vec<u8>, base64::DecodeError> {
+pub(crate) fn base64_decode<T: AsRef<[u8]>>(s: T) -> Result<Vec<u8>> {
     use base64::engine::{GeneralPurpose, GeneralPurposeConfig};
     GeneralPurpose::new(
         &base64::alphabet::STANDARD,
         GeneralPurposeConfig::new().with_decode_allow_trailing_bits(true),
     )
     .decode(s)
+    .map_err(|err| crate::format_err!("base64_decode: {:#}", err))
 }
 
 impl Display for ITermProprietary {
@@ -1332,6 +1376,10 @@ impl Display for ITermProprietary {
         }
         Ok(())
     }
+}
+
+fn not_nan_err(err: ordered_float::FloatIsNan) -> crate::Error {
+    format_err!("{:#}", err)
 }
 
 #[cfg(test)]

@@ -1,4 +1,6 @@
-use std::fmt::Display;
+use core::fmt::Display;
+
+use crate::allocate::*;
 
 /// The termwiz Error type encapsulates a range of internal
 /// errors in an opaque manner.  You can use the `source`
@@ -33,28 +35,27 @@ where
 #[doc(hidden)]
 pub enum InternalError {
     #[error(transparent)]
-    Fmt(#[from] std::fmt::Error),
+    Fmt(#[from] core::fmt::Error),
 
+    #[cfg(feature = "std")]
     #[error(transparent)]
     Io(#[from] std::io::Error),
 
+    #[cfg(feature = "std")]
     #[error(transparent)]
     FromUtf8(#[from] std::string::FromUtf8Error),
+    #[cfg(not(feature = "std"))]
+    #[error(transparent)]
+    FromUtf8(#[from] alloc::string::FromUtf8Error),
 
     #[error(transparent)]
-    Utf8(#[from] std::str::Utf8Error),
+    Utf8(#[from] core::str::Utf8Error),
 
     #[error(transparent)]
-    Base64(#[from] base64::DecodeError),
+    ParseFloat(#[from] core::num::ParseFloatError),
 
     #[error(transparent)]
-    ParseFloat(#[from] std::num::ParseFloatError),
-
-    #[error(transparent)]
-    ParseInt(#[from] std::num::ParseIntError),
-
-    #[error(transparent)]
-    FloatIsNan(#[from] ordered_float::FloatIsNan),
+    ParseInt(#[from] core::num::ParseIntError),
 
     #[error("{0}")]
     StringErr(#[from] StringWrap),
@@ -74,7 +75,7 @@ pub enum InternalError {
     #[error("{}", .context)]
     Context {
         context: String,
-        source: Box<dyn std::error::Error + Send + Sync + 'static>,
+        source: Box<dyn core::error::Error + Send + Sync + 'static>,
     },
 }
 
@@ -151,9 +152,9 @@ pub trait Context<T, E> {
         F: FnOnce() -> C;
 }
 
-impl<T, E> Context<T, E> for std::result::Result<T, E>
+impl<T, E> Context<T, E> for core::result::Result<T, E>
 where
-    E: std::error::Error + Send + Sync + 'static,
+    E: core::error::Error + Send + Sync + 'static,
 {
     fn context<C>(self, context: C) -> Result<T>
     where

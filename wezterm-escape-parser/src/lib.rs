@@ -2,6 +2,7 @@
 // using derive(FromPrimitive)
 #![allow(clippy::useless_attribute)]
 #![allow(clippy::upper_case_acronyms)]
+#![cfg_attr(not(feature = "std"), no_std)]
 //! This module provides the ability to parse escape sequences and attach
 //! semantic meaning to them.  It can also encode the semantic values as
 //! escape sequences.  It provides encoding and decoding functionality
@@ -11,6 +12,12 @@ use crate::tmux_cc::Event;
 use core::fmt::{Display, Formatter, Result as FmtResult, Write as FmtWrite};
 use num_derive::*;
 use wezterm_color_types::LinearRgba;
+
+#[cfg_attr(not(feature = "std"), macro_use)]
+extern crate alloc;
+
+mod allocate;
+use allocate::*;
 
 pub mod apc;
 pub mod color;
@@ -367,8 +374,8 @@ impl Display for Sixel {
                     (3, 1) => 3,
                     (1, 1) => 7,
                     _ => {
-                        eprintln!("bad pad/pan combo: {:?}", self);
-                        return Err(std::fmt::Error);
+                        log::error!("bad pad/pan combo: {:?}", self);
+                        return Err(core::fmt::Error);
                     }
                 },
                 if self.background_is_transparent { 1 } else { 0 },

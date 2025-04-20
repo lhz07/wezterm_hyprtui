@@ -1,20 +1,16 @@
+use crate::allocate::*;
 use crate::osc::{base64_decode, base64_encode};
-use std::collections::BTreeMap;
-use std::fmt::{Display, Error as FmtError, Formatter};
+use core::fmt::{Display, Error as FmtError, Formatter};
 
 fn get<'a>(keys: &BTreeMap<&str, &'a str>, k: &str) -> Option<&'a str> {
     keys.get(k).map(|&s| s)
 }
 
-fn geti<T: std::str::FromStr>(keys: &BTreeMap<&str, &str>, k: &str) -> Option<T> {
+fn geti<T: core::str::FromStr>(keys: &BTreeMap<&str, &str>, k: &str) -> Option<T> {
     get(keys, k).and_then(|s| s.parse().ok())
 }
 
-fn set<T: std::string::ToString>(
-    keys: &mut BTreeMap<&'static str, String>,
-    k: &'static str,
-    v: &Option<T>,
-) {
+fn set<T: ToString>(keys: &mut BTreeMap<&'static str, String>, k: &'static str, v: &Option<T>) {
     if let Some(v) = v {
         keys.insert(k, v.to_string());
     }
@@ -68,8 +64,8 @@ pub enum KittyImageData {
     },
 }
 
-impl std::fmt::Debug for KittyImageData {
-    fn fmt(&self, fmt: &mut Formatter) -> std::fmt::Result {
+impl core::fmt::Debug for KittyImageData {
+    fn fmt(&self, fmt: &mut Formatter) -> core::fmt::Result {
         match self {
             Self::Direct(data) => write!(fmt, "Direct({} bytes of data)", data.len()),
             Self::DirectBin(data) => write!(fmt, "DirectBin({} bytes of data)", data.len()),
@@ -1068,7 +1064,7 @@ impl KittyImage {
         }
         let mut keys_payload_iter = data[1..].splitn(2, |&d| d == b';');
         let keys = keys_payload_iter.next()?;
-        let key_string = std::str::from_utf8(keys).ok()?;
+        let key_string = core::str::from_utf8(keys).ok()?;
         let mut keys: BTreeMap<&str, &str> = BTreeMap::new();
         for k_v in key_string.split(',') {
             let mut k_v = k_v.splitn(2, '=');
