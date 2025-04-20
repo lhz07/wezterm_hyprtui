@@ -14,6 +14,7 @@ members = [
   "wezterm-mux-server",
   "wezterm-open-url",
   "wezterm-ssh",
+  "wezterm-surface",
   "wezterm-uds",
 ]
 resolver = "2"
@@ -86,14 +87,14 @@ enum-display-derive = "0.1"
 env-bootstrap = { path = "env-bootstrap" }
 env_logger = "0.11"
 euclid = {version="0.22", default-features=false}
-fancy-regex = "0.11"
+fancy-regex = {version="0.14", default-features=false, features=[]}
 fastrand = "2.0"
 filedescriptor = { version="0.8.3", path = "filedescriptor" }
 filenamegen = "0.2.6"
 filesystem = { path = "lua-api-crates/filesystem" }
 finl_unicode = { version = "1.3",  git="https://github.com/wez/finl_unicode.git", branch="no_std" , default-features=false, features=["categories", "grapheme_clusters"]}
 fixed = "1.23"
-fixedbitset = "0.4"
+fixedbitset = {version="0.4", default-features=false}
 flume = "0.11"
 fnv = "1.0"
 fontconfig = { path = "deps/fontconfig" }
@@ -239,14 +240,14 @@ wayland-client = "0.31"
 wayland-egl = "0.32"
 wayland-protocols = "0.32"
 wayland-protocols-plasma = { version="0.3.6", features=["client"] }
-wezterm-bidi = { version="0.2.3", path = "bidi" }
+wezterm-bidi = { version="0.2.3", path = "bidi", default-features=false}
 wezterm-blob-leases = { version="0.1.1", path = "wezterm-blob-leases"}
-wezterm-cell = { path = "wezterm-cell" }
+wezterm-cell = { path = "wezterm-cell"}
 wezterm-char-props = { path = "wezterm-char-props", default-features=false }
 wezterm-client = { path = "wezterm-client" }
-wezterm-color-types = { version="0.3", path = "color-types" }
+wezterm-color-types = { version="0.3", path = "color-types", default-features=false }
 wezterm-config-derive = { version="0.1", path="config/derive" }
-wezterm-dynamic = { version = "0.2.1", path = "wezterm-dynamic" }
+wezterm-dynamic = { version = "0.2.1", path = "wezterm-dynamic", default-features=false }
 wezterm-dynamic-derive = { version="0.1.1", path="wezterm-dynamic/derive" }
 wezterm-escape-parser = { version="0.1.0", path="wezterm-escape-parser" }
 wezterm-font = { path = "wezterm-font" }
@@ -255,6 +256,7 @@ wezterm-input-types = { version="0.1", path = "wezterm-input-types", default-fea
 wezterm-mux-server-impl = { path = "wezterm-mux-server-impl" }
 wezterm-open-url = { path = "wezterm-open-url" }
 wezterm-ssh = { path = "wezterm-ssh" }
+wezterm-surface = { path = "wezterm-surface" }
 wezterm-term = { path = "term" }
 wezterm-toast-notification = { path = "wezterm-toast-notification" }
 wezterm-uds = { path = "wezterm-uds" }

@@ -1,5 +1,5 @@
-use crate::cell::{Cell, CellAttributes};
-use std::hash::{Hash, Hasher};
+use core::hash::{Hash, Hasher};
+use wezterm_cell::{Cell, CellAttributes};
 use wezterm_char_props::emoji::Presentation;
 
 #[derive(Debug, Clone, Copy)]

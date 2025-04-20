@@ -1,16 +1,26 @@
-use crate::cell::{Cell, CellAttributes};
-use crate::color::ColorAttribute;
-#[cfg(feature = "use_image")]
-use crate::image::ImageCell;
-use crate::surface::line::CellRef;
+#![cfg_attr(not(feature = "std"), no_std)]
+use crate::line::CellRef;
+use alloc::borrow::Cow;
+use core::cmp::min;
 use finl_unicode::grapheme_clusters::Graphemes;
 #[cfg(feature = "use_serde")]
 use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
-use std::cmp::min;
+use wezterm_cell::color::ColorAttribute;
+#[cfg(feature = "use_image")]
+use wezterm_cell::image::ImageCell;
+use wezterm_cell::{Cell, CellAttributes};
 use wezterm_dynamic::{FromDynamic, ToDynamic};
 
+extern crate alloc;
+use crate::alloc::borrow::ToOwned;
+use crate::alloc::string::ToString;
+use alloc::string::String;
+use alloc::vec;
+use alloc::vec::Vec;
+
+pub mod cellcluster;
 pub mod change;
+pub mod hyperlink;
 pub mod line;
 
 pub use self::change::{Change, LineAttribute};
@@ -907,10 +917,10 @@ fn compute_position_change(current: usize, pos: &Position, limit: usize) -> usiz
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::cell::{AttributeChange, Intensity};
-    use crate::color::AnsiColor;
-    use crate::image::ImageData;
-    use std::sync::Arc;
+    use alloc::sync::Arc;
+    use wezterm_cell::color::AnsiColor;
+    use wezterm_cell::image::ImageData;
+    use wezterm_cell::{AttributeChange, Intensity};
 
     // The \x20's look a little awkward, but we can't use a plain
     // space in the first chararcter of a multi-line continuation;
@@ -1180,7 +1190,7 @@ mod test {
 
     #[test]
     fn attribute_setting() {
-        use crate::cell::Intensity;
+        use wezterm_cell::Intensity;
 
         let mut s = Surface::new(3, 1);
         s.add_change("n");

@@ -42,12 +42,12 @@
 
 pub mod caps;
 pub use wezterm_cell as cell;
-pub mod cellcluster;
 pub use wezterm_cell::color;
+pub use wezterm_surface::cellcluster;
 pub mod error;
-pub mod hyperlink;
 #[cfg(feature = "use_image")]
 pub use wezterm_cell::image;
+pub use wezterm_surface::hyperlink;
 pub mod input;
 pub mod istty;
 pub mod keymap;
@@ -56,7 +56,7 @@ mod macros;
 pub use wezterm_char_props::nerdfonts;
 mod readbuf;
 pub mod render;
-pub mod surface;
+pub use wezterm_surface as surface;
 pub mod terminal;
 #[cfg(feature = "tmux_cc")]
 pub use wezterm_escape_parser::tmux_cc;

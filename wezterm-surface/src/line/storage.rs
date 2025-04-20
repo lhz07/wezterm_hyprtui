@@ -1,6 +1,6 @@
-use crate::surface::line::cellref::CellRef;
-use crate::surface::line::clusterline::{ClusterLineCellIter, ClusteredLine};
-use crate::surface::line::vecstorage::{VecStorage, VecStorageIter};
+use crate::line::cellref::CellRef;
+use crate::line::clusterline::{ClusterLineCellIter, ClusteredLine};
+use crate::line::vecstorage::{VecStorage, VecStorageIter};
 #[cfg(feature = "use_serde")]
 use serde::{Deserialize, Serialize};
 

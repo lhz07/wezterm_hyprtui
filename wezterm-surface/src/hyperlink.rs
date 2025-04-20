@@ -4,13 +4,19 @@
 //! We use that as the foundation of our hyperlink support, and the game
 //! plan is to then implicitly enable the hyperlink attribute for a cell
 //! as we recognize linkable input text during print() processing.
-use crate::Result;
+use alloc::sync::Arc;
+use core::ops::Range;
 use fancy_regex::{Captures, Regex};
 #[cfg(feature = "use_serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::ops::Range;
-use std::sync::Arc;
 use wezterm_dynamic::{FromDynamic, FromDynamicOptions, ToDynamic, Value};
+
+extern crate alloc;
+use crate::alloc::borrow::ToOwned;
+use crate::alloc::string::ToString;
+use alloc::format;
+use alloc::string::String;
+use alloc::vec::Vec;
 
 pub use wezterm_escape_parser::hyperlink::Hyperlink;
 
@@ -61,7 +67,7 @@ impl FromDynamic for RegexWrap {
     fn from_dynamic(
         value: &Value,
         options: FromDynamicOptions,
-    ) -> std::result::Result<RegexWrap, wezterm_dynamic::Error> {
+    ) -> Result<RegexWrap, wezterm_dynamic::Error> {
         let s = String::from_dynamic(value, options)?;
         Ok(RegexWrap(Regex::new(&s).map_err(|e| e.to_string())?))
     }
@@ -86,7 +92,7 @@ impl ToDynamic for RegexWrap {
 }
 
 #[cfg(feature = "use_serde")]
-fn deserialize_regex<'de, D>(deserializer: D) -> std::result::Result<Regex, D::Error>
+fn deserialize_regex<'de, D>(deserializer: D) -> Result<Regex, D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -95,7 +101,7 @@ where
 }
 
 #[cfg(feature = "use_serde")]
-fn serialize_regex<S>(regex: &Regex, serializer: S) -> std::result::Result<S::Ok, S::Error>
+fn serialize_regex<S>(regex: &Regex, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
@@ -160,11 +166,15 @@ pub const GENERIC_HYPERLINK_PATTERN: &str = r"\b\w+://\S+[_/a-zA-Z0-9-]";
 
 impl Rule {
     /// Construct a new rule.  It may fail if the regex is invalid.
-    pub fn new(regex: &str, format: &str) -> Result<Self> {
+    pub fn new(regex: &str, format: &str) -> Result<Self, fancy_regex::Error> {
         Self::with_highlight(regex, format, 0)
     }
 
-    pub fn with_highlight(regex: &str, format: &str, highlight: usize) -> Result<Self> {
+    pub fn with_highlight(
+        regex: &str,
+        format: &str,
+        highlight: usize,
+    ) -> Result<Self, fancy_regex::Error> {
         Ok(Self {
             regex: Regex::new(regex)?,
             format: format.to_owned(),

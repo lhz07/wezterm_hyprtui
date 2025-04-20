@@ -1,22 +1,32 @@
-use crate::cell::{Cell, CellAttributes, SemanticType, UnicodeVersion};
 use crate::cellcluster::CellCluster;
 use crate::hyperlink::Rule;
-use crate::surface::line::cellref::CellRef;
-use crate::surface::line::clusterline::ClusteredLine;
-use crate::surface::line::linebits::LineBits;
-use crate::surface::line::storage::{CellStorage, VisibleCellIter};
-use crate::surface::line::vecstorage::{VecStorage, VecStorageIter};
-use crate::surface::{Change, SequenceNo, SEQ_ZERO};
+use crate::line::cellref::CellRef;
+use crate::line::clusterline::ClusteredLine;
+use crate::line::linebits::LineBits;
+use crate::line::storage::{CellStorage, VisibleCellIter};
+use crate::line::vecstorage::{VecStorage, VecStorageIter};
+use crate::{Change, SequenceNo, SEQ_ZERO};
+use alloc::borrow::Cow;
+#[cfg(feature = "appdata")]
+use alloc::sync::{Arc, Weak};
+#[cfg(feature = "appdata")]
+use core::any::Any;
+use core::hash::Hash;
+use core::ops::Range;
 use finl_unicode::grapheme_clusters::Graphemes;
 #[cfg(feature = "use_serde")]
 use serde::{Deserialize, Serialize};
 use siphasher::sip128::{Hasher128, SipHasher};
-use std::any::Any;
-use std::borrow::Cow;
-use std::hash::Hash;
-use std::ops::Range;
-use std::sync::{Arc, Mutex, Weak};
+#[cfg(feature = "appdata")]
+use std::sync::Mutex;
 use wezterm_bidi::{Direction, ParagraphDirectionHint};
+use wezterm_cell::{Cell, CellAttributes, SemanticType, UnicodeVersion};
+
+extern crate alloc;
+use crate::alloc::string::ToString;
+use alloc::string::String;
+use alloc::vec;
+use alloc::vec::Vec;
 
 #[cfg_attr(feature = "use_serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -38,6 +48,7 @@ pub struct Line {
     zones: Vec<ZoneRange>,
     seqno: SequenceNo,
     bits: LineBits,
+    #[cfg(feature = "appdata")]
     #[cfg_attr(feature = "use_serde", serde(skip))]
     appdata: Mutex<Option<Weak<dyn Any + Send + Sync>>>,
 }
@@ -49,6 +60,7 @@ impl Clone for Line {
             zones: self.zones.clone(),
             seqno: self.seqno,
             bits: self.bits,
+            #[cfg(feature = "appdata")]
             appdata: Mutex::new(self.appdata.lock().unwrap().clone()),
         }
     }
@@ -70,6 +82,7 @@ impl Line {
             cells: CellStorage::V(VecStorage::new(cells)),
             seqno,
             zones: vec![],
+            #[cfg(feature = "appdata")]
             appdata: Mutex::new(None),
         }
     }
@@ -81,6 +94,7 @@ impl Line {
             cells: CellStorage::V(VecStorage::new(cells)),
             seqno,
             zones: vec![],
+            #[cfg(feature = "appdata")]
             appdata: Mutex::new(None),
         }
     }
@@ -95,6 +109,7 @@ impl Line {
             cells: CellStorage::C(ClusteredLine::new()),
             seqno,
             zones: vec![],
+            #[cfg(feature = "appdata")]
             appdata: Mutex::new(None),
         }
     }
@@ -125,6 +140,7 @@ impl Line {
             cells: CellStorage::V(VecStorage::new(cells)),
             seqno,
             zones: vec![],
+            #[cfg(feature = "appdata")]
             appdata: Mutex::new(None),
         }
     }
@@ -151,6 +167,7 @@ impl Line {
             bits: LineBits::NONE,
             seqno,
             zones: vec![],
+            #[cfg(feature = "appdata")]
             appdata: Mutex::new(None),
         }
     }
@@ -235,6 +252,7 @@ impl Line {
     /// and not for use by "middleware" crates.
     /// A Weak reference is stored.
     /// `get_appdata` is used to retrieve a previously stored reference.
+    #[cfg(feature = "appdata")]
     pub fn set_appdata<T: Any + Send + Sync>(&self, appdata: Arc<T>) {
         let appdata: Arc<dyn Any + Send + Sync> = appdata;
         self.appdata
@@ -243,6 +261,7 @@ impl Line {
             .replace(Arc::downgrade(&appdata));
     }
 
+    #[cfg(feature = "appdata")]
     pub fn clear_appdata(&self) {
         self.appdata.lock().unwrap().take();
     }
@@ -250,6 +269,7 @@ impl Line {
     /// Retrieve the appdata for the line, if any.
     /// This may return None in the case where the underlying data has
     /// been released: Line only stores a Weak reference to it.
+    #[cfg(feature = "appdata")]
     pub fn get_appdata(&self) -> Option<Arc<dyn Any + Send + Sync>> {
         self.appdata
             .lock()
@@ -577,6 +597,7 @@ impl Line {
         if !logical.has_hyperlink() {
             for line in logical_line.iter_mut() {
                 line.bits.set(LineBits::SCANNED_IMPLICIT_HYPERLINKS, true);
+                #[cfg(feature = "appdata")]
                 line.clear_appdata();
             }
             return;
@@ -591,6 +612,7 @@ impl Line {
             **phys = logical;
             logical = remainder;
             phys.set_last_cell_was_wrapped(wrapped, seq);
+            #[cfg(feature = "appdata")]
             phys.clear_appdata();
             if is_cluster {
                 phys.compress_for_scrollback();
@@ -631,6 +653,7 @@ impl Line {
             cells: CellStorage::V(VecStorage::new(cells)),
             seqno,
             zones: vec![],
+            #[cfg(feature = "appdata")]
             appdata: Mutex::new(None),
         }
     }
@@ -715,6 +738,7 @@ impl Line {
             cells: CellStorage::V(VecStorage::new(cells)),
             seqno: self.current_seqno(),
             zones: vec![],
+            #[cfg(feature = "appdata")]
             appdata: Mutex::new(None),
         }
     }

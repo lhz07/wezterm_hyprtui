@@ -1,8 +1,13 @@
-use crate::cell::CellAttributes;
-use crate::surface::line::CellRef;
-use std::borrow::Cow;
+use crate::line::CellRef;
+use alloc::borrow::Cow;
 use wezterm_bidi::{BidiContext, Direction, ParagraphDirectionHint};
+use wezterm_cell::CellAttributes;
 use wezterm_char_props::emoji::Presentation;
+
+extern crate alloc;
+use alloc::string::String;
+use alloc::vec;
+use alloc::vec::Vec;
 
 /// A `CellCluster` is another representation of a Line.
 /// A `Vec<CellCluster>` is produced by walking through the Cells in

@@ -1,11 +1,17 @@
-use crate::cell::{Cell, CellAttributes};
-use crate::surface::line::CellRef;
+use crate::line::CellRef;
+use core::convert::TryInto;
+use core::num::NonZeroU8;
 use finl_unicode::grapheme_clusters::Graphemes;
 use fixedbitset::FixedBitSet;
 #[cfg(feature = "use_serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::convert::TryInto;
-use std::num::NonZeroU8;
+use wezterm_cell::{Cell, CellAttributes};
+
+extern crate alloc;
+use alloc::boxed::Box;
+use alloc::string::String;
+use alloc::vec;
+use alloc::vec::Vec;
 
 #[cfg_attr(feature = "use_serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, PartialEq)]
@@ -326,7 +332,7 @@ impl ClusteredLine {
 
 pub(crate) struct ClusterLineCellIter<'a> {
     graphemes: Graphemes<'a>,
-    clusters: std::slice::Iter<'a, Cluster>,
+    clusters: core::slice::Iter<'a, Cluster>,
     cluster: Option<&'a Cluster>,
     idx: usize,
     cluster_total: usize,
@@ -370,10 +376,10 @@ mod test {
     #[test]
     #[cfg(target_pointer_width = "64")]
     fn memory_usage() {
-        assert_eq!(std::mem::size_of::<ClusteredLine>(), 64);
-        assert_eq!(std::mem::size_of::<String>(), 24);
-        assert_eq!(std::mem::size_of::<Vec<Cluster>>(), 24);
-        assert_eq!(std::mem::size_of::<Option<Box<FixedBitSet>>>(), 8);
-        assert_eq!(std::mem::size_of::<Option<NonZeroU8>>(), 1);
+        assert_eq!(core::mem::size_of::<ClusteredLine>(), 64);
+        assert_eq!(core::mem::size_of::<String>(), 24);
+        assert_eq!(core::mem::size_of::<Vec<Cluster>>(), 24);
+        assert_eq!(core::mem::size_of::<Option<Box<FixedBitSet>>>(), 8);
+        assert_eq!(core::mem::size_of::<Option<NonZeroU8>>(), 1);
     }
 }

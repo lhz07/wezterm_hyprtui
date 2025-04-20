@@ -1,9 +1,12 @@
-use crate::cell::Cell;
-use crate::surface::line::cellref::CellRef;
+use crate::line::cellref::CellRef;
+use alloc::sync::Arc;
 #[cfg(feature = "use_serde")]
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 use unicode_segmentation::UnicodeSegmentation;
+use wezterm_cell::Cell;
+
+extern crate alloc;
+use alloc::vec::Vec;
 
 #[cfg_attr(feature = "use_serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, PartialEq)]
@@ -66,7 +69,7 @@ impl VecStorage {
     }
 }
 
-impl std::ops::Deref for VecStorage {
+impl core::ops::Deref for VecStorage {
     type Target = Vec<Cell>;
 
     fn deref(&self) -> &Vec<Cell> {
@@ -74,7 +77,7 @@ impl std::ops::Deref for VecStorage {
     }
 }
 
-impl std::ops::DerefMut for VecStorage {
+impl core::ops::DerefMut for VecStorage {
     fn deref_mut(&mut self) -> &mut Vec<Cell> {
         &mut self.cells
     }
@@ -82,7 +85,7 @@ impl std::ops::DerefMut for VecStorage {
 
 /// Iterates over a slice of Cell, yielding only visible cells
 pub(crate) struct VecStorageIter<'a> {
-    pub cells: std::slice::Iter<'a, Cell>,
+    pub cells: core::slice::Iter<'a, Cell>,
     pub idx: usize,
     pub skip_width: usize,
 }

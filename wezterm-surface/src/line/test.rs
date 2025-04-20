@@ -1,12 +1,12 @@
 #![cfg(test)]
 
 use super::*;
-use crate::cell::{Cell, CellAttributes};
 use crate::hyperlink::{Hyperlink, Rule};
-use crate::surface::line::clusterline::ClusteredLine;
-use crate::surface::SEQ_ZERO;
+use crate::line::clusterline::ClusteredLine;
+use crate::SEQ_ZERO;
+use alloc::sync::Arc;
 use k9::assert_equal as assert_eq;
-use std::sync::Arc;
+use wezterm_cell::{Cell, CellAttributes};
 
 /// There are 4 double-wide graphemes that occupy 2 cells each.
 /// When we join the lines, we must preserve the invisible blank
@@ -302,7 +302,7 @@ Line {
 }
 
 fn bold() -> CellAttributes {
-    use crate::cell::Intensity;
+    use wezterm_cell::Intensity;
     let mut attr = CellAttributes::default();
     attr.set_intensity(Intensity::Bold);
     attr

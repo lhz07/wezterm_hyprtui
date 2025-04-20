@@ -1,13 +1,18 @@
-use crate::cell::{unicode_column_width, AttributeChange, CellAttributes};
-use crate::color::ColorAttribute;
+use crate::{CursorShape, CursorVisibility, Position};
 #[cfg(feature = "use_image")]
-pub use crate::image::{ImageData, TextureCoordinate};
-use crate::surface::{CursorShape, CursorVisibility, Position};
+use alloc::sync::Arc;
 use finl_unicode::grapheme_clusters::Graphemes;
 #[cfg(feature = "use_serde")]
 use serde::{Deserialize, Serialize};
+use wezterm_cell::color::ColorAttribute;
 #[cfg(feature = "use_image")]
-use std::sync::Arc;
+pub use wezterm_cell::image::{ImageData, TextureCoordinate};
+use wezterm_cell::{unicode_column_width, AttributeChange, CellAttributes};
+
+extern crate alloc;
+use alloc::string::String;
+use alloc::vec;
+use alloc::vec::Vec;
 
 #[cfg_attr(feature = "use_serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, Eq, PartialEq)]
