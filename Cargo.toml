@@ -162,7 +162,7 @@ passfd = "0.1.6"
 percent-encoding = "2.3"
 pest = "2.7"
 pest_derive = "2.7"
-phf = "0.11"
+phf = {version="0.11", default-features=false}
 phf_codegen = "0.10"
 pkg-config = "0.3"
 plist = "1.7"
@@ -221,7 +221,7 @@ time-funcs = { path = "lua-api-crates/time-funcs" }
 tiny-skia = "0.11"
 tokio = "1.43"
 toml = "0.8"
-ucd-trie = "0.1"
+ucd-trie = {version="0.1", default-features=false}
 uds_windows = "1.1"
 umask = { path = "umask" }
 unicode-normalization = "0.1.24"
