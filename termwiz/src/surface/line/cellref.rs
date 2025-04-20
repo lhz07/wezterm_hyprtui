@@ -1,6 +1,6 @@
 use crate::cell::{Cell, CellAttributes};
-use crate::emoji::Presentation;
 use std::hash::{Hash, Hasher};
+use wezterm_char_props::emoji::Presentation;
 
 #[derive(Debug, Clone, Copy)]
 pub enum CellRef<'a> {

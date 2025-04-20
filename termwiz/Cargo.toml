@@ -39,6 +39,7 @@ unicode-segmentation.workspace = true
 vtparse.workspace = true
 wezterm-bidi.workspace = true
 wezterm-blob-leases = {workspace=true, optional=true}
+wezterm-char-props.workspace = true
 wezterm-color-types = {workspace = true, features=["std"]}
 wezterm-dynamic = {workspace = true, features=["std"]}
 wezterm-escape-parser = {workspace = true, features=["std"]}
@@ -84,10 +85,6 @@ workspace = true
 [package.metadata.docs.rs]
 features = ["docs"]
 rustdoc-args = ["--cfg", "feature=\"docs\""]
-
-[[bench]]
-name = "wcwidth"
-harness = false
 
 [[bench]]
 name = "cell"

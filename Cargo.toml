@@ -17,7 +17,8 @@ members = [
 ]
 resolver = "2"
 exclude = [
-  "termwiz/codegen"
+  "termwiz/codegen",
+  "wezterm-char-props/codegen",
 ]
 
 [profile.release]
@@ -239,6 +240,7 @@ wayland-protocols = "0.32"
 wayland-protocols-plasma = { version="0.3.6", features=["client"] }
 wezterm-bidi = { version="0.2.3", path = "bidi" }
 wezterm-blob-leases = { version="0.1.1", path = "wezterm-blob-leases"}
+wezterm-char-props = { path = "wezterm-char-props" }
 wezterm-client = { path = "wezterm-client" }
 wezterm-color-types = { version="0.3", path = "color-types" }
 wezterm-config-derive = { version="0.1", path="config/derive" }

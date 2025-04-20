@@ -1,11 +1,8 @@
 //! Model a cell in the terminal display
 use crate::color::{ColorAttribute, PaletteIndex};
-pub use crate::emoji::Presentation;
-use crate::emoji_variation::WCWIDTH_TABLE;
 pub use crate::escape::osc::Hyperlink;
 #[cfg(feature = "image")]
 use crate::image::ImageCell;
-use crate::widechar_width::WcWidth;
 use finl_unicode::grapheme_clusters::Graphemes;
 #[cfg(feature = "use_serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -13,6 +10,9 @@ use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::mem;
 use std::sync::Arc;
+pub use wezterm_char_props::emoji::Presentation;
+use wezterm_char_props::emoji_variation::WCWIDTH_TABLE;
+use wezterm_char_props::widechar_width::WcWidth;
 use wezterm_dynamic::{FromDynamic, ToDynamic};
 
 #[cfg_attr(feature = "use_serde", derive(Serialize, Deserialize))]
@@ -879,7 +879,7 @@ pub const LATEST_UNICODE_VERSION: UnicodeVersion = UnicodeVersion {
 
 /// Returns true if the char `c` has the unicode White_Space property
 pub fn is_white_space_char(c: char) -> bool {
-    crate::white_space::WHITE_SPACE.contains_u32(c as u32)
+    wezterm_char_props::white_space::WHITE_SPACE.contains_u32(c as u32)
 }
 
 /// Returns true if the grapheme string `g` consists entirely of characters

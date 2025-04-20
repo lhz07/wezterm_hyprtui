@@ -40,12 +40,6 @@
 //! * `widgets` - enables the widget layout and related traits
 //! * `use_serde` - makes a number of structs serde serializable
 
-mod emoji;
-mod emoji_presentation;
-mod emoji_variation;
-mod white_space;
-mod widechar_width;
-
 pub mod caps;
 pub mod cell;
 pub mod cellcluster;
@@ -59,8 +53,7 @@ pub mod istty;
 pub mod keymap;
 pub mod lineedit;
 mod macros;
-pub mod nerdfonts;
-mod nerdfonts_data;
+pub use wezterm_char_props::nerdfonts;
 mod readbuf;
 pub mod render;
 pub mod surface;

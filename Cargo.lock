@@ -5678,6 +5678,7 @@ dependencies = [
  "vtparse",
  "wezterm-bidi",
  "wezterm-blob-leases",
+ "wezterm-char-props",
  "wezterm-color-types",
  "wezterm-dynamic",
  "wezterm-escape-parser",
@@ -6582,6 +6583,16 @@ dependencies = [
  "tempfile",
  "thiserror 1.0.69",
  "uuid",
+]
+
+[[package]]
+name = "wezterm-char-props"
+version = "0.1.3"
+dependencies = [
+ "k9",
+ "phf",
+ "serde",
+ "ucd-trie",
 ]
 
 [[package]]
