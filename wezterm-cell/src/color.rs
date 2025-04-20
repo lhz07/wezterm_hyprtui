@@ -7,6 +7,15 @@ use serde::{Deserialize, Serialize};
 pub use wezterm_color_types::{LinearRgba, SrgbaTuple};
 use wezterm_dynamic::{FromDynamic, ToDynamic};
 
+#[cfg(not(feature = "std"))]
+extern crate alloc;
+#[cfg(not(feature = "std"))]
+use crate::alloc::string::ToString;
+#[cfg(not(feature = "std"))]
+use alloc::format;
+#[cfg(not(feature = "std"))]
+use alloc::vec::Vec;
+
 pub use wezterm_escape_parser::color::{AnsiColor, ColorSpec, PaletteIndex, RgbColor};
 
 /// Specifies the color to be used when rendering a cell.  This is the

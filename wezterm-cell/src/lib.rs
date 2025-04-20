@@ -1,19 +1,28 @@
+#![cfg_attr(not(feature = "std"), no_std)]
 //! Model a cell in the terminal display
 use crate::color::{ColorAttribute, PaletteIndex};
-pub use crate::escape::osc::Hyperlink;
-#[cfg(feature = "image")]
+#[cfg(feature = "use_image")]
 use crate::image::ImageCell;
+use alloc::sync::Arc;
+use core::hash::{Hash, Hasher};
+use core::mem;
 use finl_unicode::grapheme_clusters::Graphemes;
 #[cfg(feature = "use_serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::collections::HashMap;
-use std::hash::{Hash, Hasher};
-use std::mem;
-use std::sync::Arc;
 pub use wezterm_char_props::emoji::Presentation;
 use wezterm_char_props::emoji_variation::WCWIDTH_TABLE;
 use wezterm_char_props::widechar_width::WcWidth;
 use wezterm_dynamic::{FromDynamic, ToDynamic};
+pub use wezterm_escape_parser::osc::Hyperlink;
+
+extern crate alloc;
+use crate::alloc::string::ToString;
+use alloc::boxed::Box;
+use alloc::vec::Vec;
+
+pub mod color;
+#[cfg(feature = "use_image")]
+pub mod image;
 
 #[cfg_attr(feature = "use_serde", derive(Serialize, Deserialize))]
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
@@ -56,8 +65,8 @@ pub struct CellAttributes {
     fat: Option<Box<FatAttributes>>,
 }
 
-impl std::fmt::Debug for CellAttributes {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+impl core::fmt::Debug for CellAttributes {
+    fn fmt(&self, fmt: &mut core::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
         fmt.debug_struct("CellAttributes")
             .field("attributes", &self.attributes)
             .field("intensity", &self.intensity())
@@ -83,7 +92,7 @@ struct FatAttributes {
     /// The hyperlink content, if any
     hyperlink: Option<Arc<Hyperlink>>,
     /// The image data, if any
-    #[cfg(feature = "image")]
+    #[cfg(feature = "use_image")]
     image: Vec<Box<ImageCell>>,
     /// The color of the underline.  If None, then
     /// the foreground color is to be used
@@ -97,7 +106,7 @@ impl FatAttributes {
         if let Some(link) = &self.hyperlink {
             link.compute_shape_hash(hasher);
         }
-        #[cfg(feature = "image")]
+        #[cfg(feature = "use_image")]
         for cell in &self.image {
             cell.compute_shape_hash(hasher);
         }
@@ -309,7 +318,7 @@ impl CellAttributes {
         if self.fat.is_none() {
             self.fat.replace(Box::new(FatAttributes {
                 hyperlink: None,
-                #[cfg(feature = "image")]
+                #[cfg(feature = "use_image")]
                 image: vec![],
                 underline_color: ColorAttribute::Default,
                 foreground: ColorAttribute::Default,
@@ -323,7 +332,7 @@ impl CellAttributes {
             .fat
             .as_ref()
             .map(|fat| {
-                #[cfg(feature = "image")]
+                #[cfg(feature = "use_image")]
                 {
                     if !fat.image.is_empty() {
                         return false;
@@ -352,7 +361,7 @@ impl CellAttributes {
     }
 }
 
-#[cfg(feature = "image")]
+#[cfg(feature = "use_image")]
 impl CellAttributes {
     /// Assign a single image to a cell.
     pub fn set_image(&mut self, image: Box<ImageCell>) -> &mut Self {
@@ -459,7 +468,7 @@ impl CellAttributes {
     /// Returns the list of attached images in z-index order.
     /// Returns None if there are no attached images; will
     /// never return Some(vec![]).
-    #[cfg(feature = "image")]
+    #[cfg(feature = "use_image")]
     pub fn images(&self) -> Option<Vec<ImageCell>> {
         let fat = self.fat.as_ref()?;
         if fat.image.is_empty() {
@@ -528,7 +537,7 @@ where
 {
     // unsafety: this is safe because the Cell constructor guarantees
     // that the storage is valid utf8
-    let s = unsafe { std::str::from_utf8_unchecked(value.as_bytes()) };
+    let s = unsafe { core::str::from_utf8_unchecked(value.as_bytes()) };
     s.serialize(serializer)
 }
 
@@ -598,11 +607,7 @@ impl TeenyString {
             " "
         } else if s.len() == 1 {
             let b = s.as_bytes()[0];
-            if b < 0x20 || b == 0x7f {
-                " "
-            } else {
-                s
-            }
+            if b < 0x20 || b == 0x7f { " " } else { s }
         } else {
             s
         };
@@ -611,10 +616,10 @@ impl TeenyString {
         let len = bytes.len();
         let width = width.unwrap_or_else(|| grapheme_column_width(s, unicode_version));
 
-        if len < std::mem::size_of::<u64>() && width < 3 {
+        if len < core::mem::size_of::<u64>() && width < 3 {
             let mut word = 0u64;
             unsafe {
-                std::ptr::copy_nonoverlapping(
+                core::ptr::copy_nonoverlapping(
                     bytes.as_ptr(),
                     &mut word as *mut u64 as *mut u8,
                     len,
@@ -647,11 +652,7 @@ impl TeenyString {
 
     pub fn width(&self) -> usize {
         if Self::is_marker_bit_set(self.0) {
-            if Self::is_double_width(self.0) {
-                2
-            } else {
-                1
-            }
+            if Self::is_double_width(self.0) { 2 } else { 1 }
         } else {
             let heap = self.0 as *const u64 as *const TeenyStringHeap;
             unsafe { (*heap).width }
@@ -661,18 +662,18 @@ impl TeenyString {
     pub fn str(&self) -> &str {
         // unsafety: this is safe because the constructor guarantees
         // that the storage is valid utf8
-        unsafe { std::str::from_utf8_unchecked(self.as_bytes()) }
+        unsafe { core::str::from_utf8_unchecked(self.as_bytes()) }
     }
 
     pub fn as_bytes(&self) -> &[u8] {
         if Self::is_marker_bit_set(self.0) {
             let bytes = &self.0 as *const u64 as *const u8;
             let bytes =
-                unsafe { std::slice::from_raw_parts(bytes, std::mem::size_of::<u64>() - 1) };
+                unsafe { core::slice::from_raw_parts(bytes, core::mem::size_of::<u64>() - 1) };
             let len = bytes
                 .iter()
                 .position(|&b| b == 0)
-                .unwrap_or(std::mem::size_of::<u64>() - 1);
+                .unwrap_or(core::mem::size_of::<u64>() - 1);
 
             &bytes[0..len]
         } else {
@@ -691,7 +692,7 @@ impl Drop for TeenyString {
     }
 }
 
-impl std::clone::Clone for TeenyString {
+impl core::clone::Clone for TeenyString {
     fn clone(&self) -> Self {
         if Self::is_marker_bit_set(self.0) {
             Self(self.0)
@@ -701,12 +702,12 @@ impl std::clone::Clone for TeenyString {
     }
 }
 
-impl std::cmp::PartialEq for TeenyString {
+impl core::cmp::PartialEq for TeenyString {
     fn eq(&self, rhs: &Self) -> bool {
         self.as_bytes().eq(rhs.as_bytes())
     }
 }
-impl std::cmp::Eq for TeenyString {}
+impl core::cmp::Eq for TeenyString {}
 
 /// Models the contents of a cell on the terminal display
 #[cfg_attr(feature = "use_serde", derive(Serialize, Deserialize))]
@@ -723,8 +724,8 @@ pub struct Cell {
     attrs: CellAttributes,
 }
 
-impl std::fmt::Debug for Cell {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+impl core::fmt::Debug for Cell {
+    fn fmt(&self, fmt: &mut core::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
         fmt.debug_struct("Cell")
             .field("text", &self.str())
             .field("width", &self.width())
@@ -827,7 +828,8 @@ impl Cell {
 pub struct UnicodeVersion {
     pub version: u8,
     pub ambiguous_are_wide: bool,
-    pub cell_widths: Option<Arc<HashMap<u32, u8>>>,
+    #[cfg(feature = "std")]
+    pub cell_widths: Option<Arc<std::collections::HashMap<u32, u8>>>,
 }
 
 impl UnicodeVersion {
@@ -835,6 +837,7 @@ impl UnicodeVersion {
         Self {
             version,
             ambiguous_are_wide: false,
+            #[cfg(feature = "std")]
             cell_widths: None,
         }
     }
@@ -857,6 +860,7 @@ impl UnicodeVersion {
 
     #[inline]
     fn wcwidth(&self, c: char) -> usize {
+        #[cfg(feature = "std")]
         if let Some(ref cell_widths) = self.cell_widths {
             if let Some(width) = cell_widths.get(&(c as u32)) {
                 return (*width).into();
@@ -874,6 +878,7 @@ impl UnicodeVersion {
 pub const LATEST_UNICODE_VERSION: UnicodeVersion = UnicodeVersion {
     version: 14,
     ambiguous_are_wide: false,
+    #[cfg(feature = "std")]
     cell_widths: None,
 };
 
@@ -999,7 +1004,7 @@ mod test {
     #[test]
     fn teeny_string() {
         assert!(
-            std::mem::size_of::<usize>() <= std::mem::size_of::<u64>(),
+            core::mem::size_of::<usize>() <= core::mem::size_of::<u64>(),
             "if a pointer doesn't fit in u64 then we need to change TeenyString"
         );
 
@@ -1018,13 +1023,13 @@ mod test {
     #[test]
     #[cfg(target_pointer_width = "64")]
     fn memory_usage() {
-        assert_eq!(std::mem::size_of::<crate::color::RgbColor>(), 4);
-        assert_eq!(std::mem::size_of::<ColorAttribute>(), 20);
-        assert_eq!(std::mem::size_of::<CellAttributes>(), 16);
-        assert_eq!(std::mem::size_of::<Cell>(), 24);
-        assert_eq!(std::mem::size_of::<Vec<u8>>(), 24);
-        assert_eq!(std::mem::size_of::<char>(), 4);
-        assert_eq!(std::mem::size_of::<TeenyString>(), 8);
+        assert_eq!(core::mem::size_of::<crate::color::RgbColor>(), 4);
+        assert_eq!(core::mem::size_of::<ColorAttribute>(), 20);
+        assert_eq!(core::mem::size_of::<CellAttributes>(), 16);
+        assert_eq!(core::mem::size_of::<Cell>(), 24);
+        assert_eq!(core::mem::size_of::<Vec<u8>>(), 24);
+        assert_eq!(core::mem::size_of::<char>(), 4);
+        assert_eq!(core::mem::size_of::<TeenyString>(), 8);
     }
 
     #[test]
@@ -1187,7 +1192,7 @@ mod test {
         assert_eq!(unicode_column_width(sequence, None), 2);
         assert_eq!(grapheme_column_width(sequence, None), 2);
 
-        let sequence2 = std::str::from_utf8(b"\xe1\x84\x92\xe1\x85\xa1\xe1\x86\xab").unwrap();
+        let sequence2 = core::str::from_utf8(b"\xe1\x84\x92\xe1\x85\xa1\xe1\x86\xab").unwrap();
         assert_eq!(unicode_column_width(sequence2, None), 2);
         assert_eq!(grapheme_column_width(sequence2, None), 2);
     }

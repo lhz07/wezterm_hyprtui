@@ -69,13 +69,13 @@ pub enum InternalError {
     #[error(transparent)]
     FileDescriptor(#[from] filedescriptor::Error),
 
+    #[cfg(feature = "use_image")]
+    #[error(transparent)]
+    ImageCellError(#[from] wezterm_cell::image::ImageCellError),
+
     #[cfg(feature = "image")]
     #[error(transparent)]
     BlobLease(#[from] wezterm_blob_leases::Error),
-
-    #[cfg(feature = "use_image")]
-    #[error(transparent)]
-    ImageError(#[from] image::ImageError),
 
     #[error("{}", .context)]
     Context {

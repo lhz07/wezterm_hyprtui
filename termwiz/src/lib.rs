@@ -41,13 +41,13 @@
 //! * `use_serde` - makes a number of structs serde serializable
 
 pub mod caps;
-pub mod cell;
+pub use wezterm_cell as cell;
 pub mod cellcluster;
-pub mod color;
+pub use wezterm_cell::color;
 pub mod error;
 pub mod hyperlink;
-#[cfg(feature = "image")]
-pub mod image;
+#[cfg(feature = "use_image")]
+pub use wezterm_cell::image;
 pub mod input;
 pub mod istty;
 pub mod keymap;

@@ -1,6 +1,6 @@
 use crate::cell::{Cell, CellAttributes};
 use crate::color::ColorAttribute;
-#[cfg(feature = "image")]
+#[cfg(feature = "use_image")]
 use crate::image::ImageCell;
 use crate::surface::line::CellRef;
 use finl_unicode::grapheme_clusters::Graphemes;
@@ -14,7 +14,7 @@ pub mod change;
 pub mod line;
 
 pub use self::change::{Change, LineAttribute};
-#[cfg(feature = "image")]
+#[cfg(feature = "use_image")]
 pub use self::change::{Image, TextureCoordinate};
 pub use self::line::Line;
 
@@ -299,7 +299,7 @@ impl Surface {
             Change::CursorColor(color) => self.cursor_color = *color,
             Change::CursorShape(shape) => self.cursor_shape = Some(*shape),
             Change::CursorVisibility(visibility) => self.cursor_visibility = *visibility,
-            #[cfg(feature = "image")]
+            #[cfg(feature = "use_image")]
             Change::Image(image) => self.add_image(image),
             Change::Title(text) => self.title = text.to_owned(),
             Change::ScrollRegionUp {
@@ -316,7 +316,7 @@ impl Surface {
         }
     }
 
-    #[cfg(feature = "image")]
+    #[cfg(feature = "use_image")]
     fn add_image(&mut self, image: &Image) {
         use ordered_float::NotNan;
 

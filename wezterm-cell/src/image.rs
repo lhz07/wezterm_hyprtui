@@ -11,13 +11,13 @@
 //! protocol appears to track the images out of band as attachments with
 //! z-order.
 
-use crate::error::InternalError;
 use ordered_float::NotNan;
 #[cfg(feature = "use_serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::hash::{Hash, Hasher};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Duration;
+#[cfg(feature = "std")]
 use wezterm_blob_leases::{BlobLease, BlobManager};
 
 #[cfg(feature = "use_serde")]
@@ -203,6 +203,7 @@ pub enum ImageDataType {
     /// Data is in the native image file format,
     /// (best for file formats that have animated content)
     /// and is stored as a blob via the blob manager.
+    #[cfg(feature = "std")]
     EncodedLease(
         #[cfg_attr(
             feature = "use_serde",
@@ -341,7 +342,7 @@ impl ImageDataType {
     }
 
     #[cfg(feature = "use_image")]
-    pub fn dimensions(&self) -> Result<(u32, u32), InternalError> {
+    pub fn dimensions(&self) -> Result<(u32, u32), ImageCellError> {
         fn dimensions_for_data(data: &[u8]) -> image::ImageResult<(u32, u32)> {
             let reader =
                 image::ImageReader::new(std::io::Cursor::new(data)).with_guessed_format()?;
@@ -360,7 +361,7 @@ impl ImageDataType {
 
     /// Migrate an in-memory encoded image blob to on-disk to reduce
     /// the memory footprint
-    pub fn swap_out(self) -> Result<Self, InternalError> {
+    pub fn swap_out(self) -> Result<Self, ImageCellError> {
         match self {
             Self::EncodedFile(data) => match BlobManager::store(&data) {
                 Ok(lease) => Ok(Self::EncodedLease(lease)),
@@ -498,6 +499,19 @@ impl ImageDataType {
             _ => Self::EncodedFile(data),
         }
     }
+}
+
+#[derive(thiserror::Error, Debug)]
+#[non_exhaustive]
+pub enum ImageCellError {
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+
+    #[error(transparent)]
+    BlobLease(#[from] wezterm_blob_leases::Error),
+
+    #[error(transparent)]
+    ImageError(#[from] image::ImageError),
 }
 
 #[cfg_attr(feature = "use_serde", derive(Serialize, Deserialize))]
