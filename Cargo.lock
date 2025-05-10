@@ -6996,7 +6996,10 @@ dependencies = [
  "unicode-normalization",
  "url",
  "wezterm-bidi",
+ "wezterm-cell",
  "wezterm-dynamic",
+ "wezterm-escape-parser",
+ "wezterm-surface",
 ]
 
 [[package]]
