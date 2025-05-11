@@ -430,7 +430,7 @@ mod win {
     }
 }
 
-#[cfg(windows)]
+#[cfg(all(feature = "kitty-shm", windows))]
 use win::read_shared_memory_data;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
