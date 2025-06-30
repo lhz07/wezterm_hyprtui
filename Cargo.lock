@@ -6835,7 +6835,6 @@ dependencies = [
 name = "wezterm-gui-subcommands"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "clap",
  "config",
 ]
