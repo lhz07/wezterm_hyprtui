@@ -805,15 +805,15 @@ dependencies = [
 
 [[package]]
 name = "cocoa"
-version = "0.26.1"
+version = "0.25.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad36507aeb7e16159dfe68db81ccc27571c3ccd4b76fb2fb72fc59e7a4b1b64c"
+checksum = "f6140449f97a6e97f9511815c5632d84c8aacf8ac271ad77c559218161a1373c"
 dependencies = [
- "bitflags 2.9.1",
+ "bitflags 1.3.2",
  "block",
  "cocoa-foundation",
- "core-foundation 0.10.1",
- "core-graphics",
+ "core-foundation 0.9.4",
+ "core-graphics 0.23.2",
  "foreign-types 0.5.0",
  "libc",
  "objc",
@@ -821,14 +821,15 @@ dependencies = [
 
 [[package]]
 name = "cocoa-foundation"
-version = "0.2.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "81411967c50ee9a1fc11365f8c585f863a22a9697c89239c452292c40ba79b0d"
+checksum = "8c6234cbb2e4c785b456c0644748b1ac416dd045799740356f8363dfe00c93f7"
 dependencies = [
- "bitflags 2.9.1",
+ "bitflags 1.3.2",
  "block",
- "core-foundation 0.10.1",
- "core-graphics-types 0.2.0",
+ "core-foundation 0.9.4",
+ "core-graphics-types 0.1.3",
+ "libc",
  "objc",
 ]
 
@@ -943,7 +944,7 @@ dependencies = [
  "log",
  "luahelper",
  "mlua",
- "nix 0.29.0",
+ "nix",
  "notify",
  "ordered-float 4.6.0",
  "portable-pty",
@@ -976,9 +977,9 @@ dependencies = [
 
 [[package]]
 name = "core-foundation"
-version = "0.10.1"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b2a6cd9ae233e7f62ba4e9353e81a88df7fc8a5987b8d445b4d90c879bd156f6"
+checksum = "b55271e5c8c478ad3f38ad24ef34923091e0548492a266d19b3c0b4d82574c63"
 dependencies = [
  "core-foundation-sys",
  "libc",
@@ -992,12 +993,25 @@ checksum = "773648b94d0e5d620f64f280777445740e61fe701025087ec8b57f45c791888b"
 
 [[package]]
 name = "core-graphics"
+version = "0.23.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c07782be35f9e1140080c6b96f0d44b739e2278479f64e02fdab4e32dfd8b081"
+dependencies = [
+ "bitflags 1.3.2",
+ "core-foundation 0.9.4",
+ "core-graphics-types 0.1.3",
+ "foreign-types 0.5.0",
+ "libc",
+]
+
+[[package]]
+name = "core-graphics"
 version = "0.24.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fa95a34622365fa5bbf40b20b75dba8dfa8c94c734aea8ac9a5ca38af14316f1"
 dependencies = [
  "bitflags 2.9.1",
- "core-foundation 0.10.1",
+ "core-foundation 0.10.0",
  "core-graphics-types 0.2.0",
  "foreign-types 0.5.0",
  "libc",
@@ -1021,7 +1035,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3d44a101f213f6c4cdc1853d4b78aef6db6bdfa3468798cc1d9912f4735013eb"
 dependencies = [
  "bitflags 2.9.1",
- "core-foundation 0.10.1",
+ "core-foundation 0.10.0",
  "libc",
 ]
 
@@ -1031,8 +1045,8 @@ version = "21.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a593227b66cbd4007b2a050dfdd9e1d1318311409c8d600dc82ba1b15ca9c130"
 dependencies = [
- "core-foundation 0.10.1",
- "core-graphics",
+ "core-foundation 0.10.0",
+ "core-graphics 0.24.0",
  "foreign-types 0.5.0",
  "libc",
 ]
@@ -3228,7 +3242,7 @@ version = "1.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c0aeb26bf5e836cc1c341c8106051b573f1766dfa05aa87f0b98be5e51b02303"
 dependencies = [
- "nix 0.29.0",
+ "nix",
  "winapi",
 ]
 
@@ -3445,7 +3459,7 @@ dependencies = [
  "metrics",
  "mlua",
  "names",
- "nix 0.29.0",
+ "nix",
  "ntapi",
  "parking_lot",
  "percent-encoding",
@@ -3575,18 +3589,6 @@ dependencies = [
  "cfg_aliases",
  "libc",
  "memoffset",
-]
-
-[[package]]
-name = "nix"
-version = "0.30.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "74523f3a35e05aba87a1d978330aef40f67b0304ac79c1c00b294c9830543db6"
-dependencies = [
- "bitflags 2.9.1",
- "cfg-if",
- "cfg_aliases",
- "libc",
 ]
 
 [[package]]
@@ -4265,7 +4267,7 @@ dependencies = [
  "lazy_static",
  "libc",
  "log",
- "nix 0.29.0",
+ "nix",
  "serde",
  "serial2",
  "shared_library",
@@ -5384,20 +5386,20 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
 name = "starship-battery"
-version = "0.10.2"
+version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b781e3db6801873ce18c19041da668920c46223cdc7059ea20e2f8fe1ba85a2"
+checksum = "ce0bc92586a2cba9cd189520c457b95e50f5565c3011484a5c83949be2f9fdcc"
 dependencies = [
  "cfg-if",
- "core-foundation 0.10.1",
+ "core-foundation 0.10.0",
  "lazycell",
  "libc",
  "mach2",
- "nix 0.30.1",
+ "nix",
  "num-traits",
  "plist",
  "uom",
- "windows-sys 0.60.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -5663,7 +5665,7 @@ dependencies = [
  "libc",
  "log",
  "memmem",
- "nix 0.29.0",
+ "nix",
  "num-derive",
  "num-traits",
  "ordered-float 4.6.0",
@@ -6164,9 +6166,9 @@ checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
 
 [[package]]
 name = "uom"
-version = "0.37.0"
+version = "0.36.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cd5cfe7d84f6774726717f358a37f5bca8fca273bed4de40604ad129d1107b49"
+checksum = "ffd36e5350a65d112584053ee91843955826bf9e56ec0d1351214e01f6d7cd9c"
 dependencies = [
  "num-traits",
  "typenum",
@@ -6718,7 +6720,7 @@ dependencies = [
  "image",
  "k9",
  "log",
- "nix 0.29.0",
+ "nix",
  "num-derive",
  "num-traits",
  "ordered-float 4.6.0",
@@ -6743,7 +6745,7 @@ dependencies = [
  "cairo-rs",
  "cocoa",
  "config",
- "core-foundation 0.10.1",
+ "core-foundation 0.10.0",
  "core-text",
  "dwrote",
  "encoding_rs",
@@ -7284,8 +7286,8 @@ dependencies = [
  "clipboard-win",
  "cocoa",
  "config",
- "core-foundation 0.10.1",
- "core-graphics",
+ "core-foundation 0.10.0",
+ "core-graphics 0.24.0",
  "dirs-next",
  "downcast-rs",
  "euclid",
@@ -7999,7 +8001,7 @@ dependencies = [
  "futures-sink",
  "futures-util",
  "hex",
- "nix 0.29.0",
+ "nix",
  "ordered-stream",
  "rand 0.8.5",
  "serde",
