@@ -353,7 +353,7 @@ pub struct TerminalState {
     term_program: String,
     term_version: String,
 
-    writer: BufWriter<ThreadedWriter>,
+    writer: BufWriter<Box<dyn Write + Send>>,
 
     image_cache: lru::LruCache<[u8; 32], Arc<ImageData>>,
     sixel_scrolls_right: bool,
@@ -443,7 +443,7 @@ fn default_color_map() -> HashMap<u16, RgbColor> {
 /// back-pressure when there is a lot of data to read,
 /// and we're in control of the write side, which represents
 /// input from the interactive user, or pastes.
-struct ThreadedWriter {
+pub struct ThreadedWriter {
     sender: Sender<WriterMessage>,
 }
 
@@ -453,7 +453,7 @@ enum WriterMessage {
 }
 
 impl ThreadedWriter {
-    fn new(mut writer: Box<dyn std::io::Write + Send>) -> Self {
+    pub fn new(mut writer: impl std::io::Write + Send + 'static) -> Self {
         let (sender, receiver) = channel::<WriterMessage>();
 
         std::thread::spawn(move || {
@@ -504,7 +504,7 @@ impl TerminalState {
         term_version: &str,
         writer: Box<dyn std::io::Write + Send>,
     ) -> TerminalState {
-        let writer = BufWriter::new(ThreadedWriter::new(writer));
+        let writer = BufWriter::new(writer);
         let seqno = 1;
         let screen = ScreenOrAlt::new(size, &config, seqno, config.bidi_mode());
 
