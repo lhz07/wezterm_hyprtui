@@ -121,6 +121,16 @@ impl ImageCell {
         self.placement_id.hash(hasher);
     }
 
+    pub fn simple_hash(&self) -> u64 {
+        let mut h = std::hash::DefaultHasher::new();
+        let hasher = &mut h;
+        self.data.hash.hash(hasher);
+        self.z_index.hash(hasher);
+        self.image_id.hash(hasher);
+        self.placement_id.hash(hasher);
+        hasher.finish()
+    }
+
     pub fn with_z_index(
         top_left: TextureCoordinate,
         bottom_right: TextureCoordinate,
