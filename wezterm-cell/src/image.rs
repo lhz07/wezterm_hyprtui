@@ -121,7 +121,7 @@ impl ImageCell {
         self.placement_id.hash(hasher);
     }
 
-    pub fn simple_hash(&self) -> u64 {
+    pub fn unique_hash(&self) -> u64 {
         let mut h = std::hash::DefaultHasher::new();
         let hasher = &mut h;
         self.data.hash.hash(hasher);
