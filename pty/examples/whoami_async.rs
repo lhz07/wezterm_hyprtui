@@ -1,6 +1,6 @@
 use anyhow::anyhow;
 use futures::prelude::*;
-use portable_pty::{native_pty_system, CommandBuilder, PtySize};
+use portable_pty::{native_pty_system, CommandBuilder, MasterPty, PtySize, PtySystem, SlavePty};
 
 // This example shows how to use the `smol` crate to use portable_pty
 // in an asynchronous application.
@@ -9,7 +9,7 @@ fn main() -> anyhow::Result<()> {
     smol::block_on(async {
         let pty_system = native_pty_system();
 
-        let pair = pty_system.openpty(PtySize {
+        let (master, slave) = pty_system.openpty(PtySize {
             rows: 24,
             cols: 80,
             pixel_width: 0,
@@ -23,7 +23,6 @@ fn main() -> anyhow::Result<()> {
         // Note that this implicitly drops slave and closes out
         // file handles which is important to avoid deadlock
         // when waiting for the child process!
-        let slave = pair.slave;
         let mut child = smol::unblock(move || slave.spawn_command(cmd)).await?;
 
         {
@@ -33,7 +32,7 @@ fn main() -> anyhow::Result<()> {
             // It is important to take the writer even if you don't
             // send anything to its stdin so that EOF can be
             // generated, otherwise you risk deadlocking yourself.
-            let writer = pair.master.take_writer()?;
+            let writer = master.take_writer()?;
 
             // Explicitly generate EOF
             drop(writer);
@@ -47,12 +46,12 @@ fn main() -> anyhow::Result<()> {
             .await?
         );
 
-        let reader = pair.master.try_clone_reader()?;
+        let reader = master.try_clone_reader()?;
 
         // Take care to drop the master after our processes are
         // done, as some platforms get unhappy if it is dropped
         // sooner than that.
-        drop(pair.master);
+        drop(master);
 
         let mut lines = smol::io::BufReader::new(smol::Unblock::new(reader)).lines();
         while let Some(line) = lines.next().await {

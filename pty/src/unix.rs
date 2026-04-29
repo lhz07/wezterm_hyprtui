@@ -1,6 +1,6 @@
 //! Working with pseudo-terminals
 
-use crate::{Child, CommandBuilder, MasterPty, PtyPair, PtySize, PtySystem, SlavePty};
+use crate::{CommandBuilder, MasterPty, PtySize, PtySystem, SlavePty};
 use anyhow::{bail, Error};
 use filedescriptor::FileDescriptor;
 use libc::{self, winsize};
@@ -17,7 +17,7 @@ use std::{io, mem, ptr};
 pub use std::os::unix::io::RawFd;
 
 #[derive(Default)]
-pub struct UnixPtySystem {}
+pub struct UnixPtySystem;
 
 fn openpty(size: PtySize) -> anyhow::Result<(UnixMasterPty, UnixSlavePty)> {
     let mut master: RawFd = -1;
@@ -67,17 +67,15 @@ fn openpty(size: PtySize) -> anyhow::Result<(UnixMasterPty, UnixSlavePty)> {
     Ok((master, slave))
 }
 
-impl PtySystem for UnixPtySystem {
-    fn openpty(&self, size: PtySize) -> anyhow::Result<PtyPair> {
-        let (master, slave) = openpty(size)?;
-        Ok(PtyPair {
-            master: Box::new(master),
-            slave: Box::new(slave),
-        })
+impl PtySystem<UnixMasterPty, UnixSlavePty, std::process::Child, PtyFd, UnixMasterWriter>
+    for UnixPtySystem
+{
+    fn openpty(&self, size: PtySize) -> anyhow::Result<(UnixMasterPty, UnixSlavePty)> {
+        openpty(size)
     }
 }
 
-struct PtyFd(pub FileDescriptor);
+pub struct PtyFd(pub(crate) FileDescriptor);
 impl std::ops::Deref for PtyFd {
     type Target = FileDescriptor;
     fn deref(&self) -> &FileDescriptor {
@@ -300,7 +298,7 @@ impl PtyFd {
 
 /// Represents the master end of a pty.
 /// The file descriptor will be closed when the Pty is dropped.
-struct UnixMasterPty {
+pub struct UnixMasterPty {
     fd: PtyFd,
     took_writer: RefCell<bool>,
     tty_name: Option<PathBuf>,
@@ -308,7 +306,7 @@ struct UnixMasterPty {
 
 /// Represents the slave end of a pty.
 /// The file descriptor will be closed when the Pty is dropped.
-struct UnixSlavePty {
+pub struct UnixSlavePty {
     fd: PtyFd,
 }
 
@@ -331,12 +329,9 @@ fn cloexec(fd: RawFd) -> Result<(), Error> {
     Ok(())
 }
 
-impl SlavePty for UnixSlavePty {
-    fn spawn_command(
-        &self,
-        builder: CommandBuilder,
-    ) -> Result<Box<dyn Child + Send + Sync>, Error> {
-        Ok(Box::new(self.fd.spawn_command(builder)?))
+impl SlavePty<std::process::Child> for UnixSlavePty {
+    fn spawn_command(self, builder: CommandBuilder) -> Result<std::process::Child, Error> {
+        self.fd.spawn_command(builder)
     }
 }
 
@@ -349,12 +344,12 @@ impl MasterPty for UnixMasterPty {
         self.fd.get_size()
     }
 
-    fn try_clone_reader(&self) -> Result<Box<dyn Read + Send>, Error> {
+    fn try_clone_reader(&self) -> Result<Box<dyn std::io::Read + Send>, Error> {
         let fd = PtyFd(self.fd.try_clone()?);
         Ok(Box::new(fd))
     }
 
-    fn take_writer(&self) -> Result<Box<dyn Write + Send>, Error> {
+    fn take_writer(&self) -> Result<Box<dyn std::io::Write + Send>, Error> {
         if *self.took_writer.borrow() {
             anyhow::bail!("cannot take writer more than once");
         }
@@ -386,7 +381,7 @@ impl MasterPty for UnixMasterPty {
 /// Represents the master end of a pty.
 /// EOT will be sent, and then the file descriptor will be closed when
 /// the Pty is dropped.
-struct UnixMasterWriter {
+pub struct UnixMasterWriter {
     fd: PtyFd,
 }
 

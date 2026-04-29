@@ -2,6 +2,7 @@
 members = [
   "bidi",
   "bidi/generate",
+  "pty",
   "wezterm-blob-leases",
   "wezterm-cell",
   "wezterm-escape-parser",

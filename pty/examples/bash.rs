@@ -1,7 +1,7 @@
 //! This example demonstrates how to spawn a Bash shell using the `portable_pty` crate.
 //! based on pty/examples/whoami.rs
 
-use portable_pty::{CommandBuilder, NativePtySystem, PtySize, PtySystem};
+use portable_pty::{CommandBuilder, MasterPty, NativePtySystem, PtySize, PtySystem, SlavePty};
 use std::io::{Read, Write};
 use std::sync::mpsc::channel;
 use std::thread;
@@ -10,7 +10,7 @@ fn main() {
     let pty_system = NativePtySystem::default();
 
     // Open the PTY with specified size.
-    let pair = pty_system
+    let (master, slave) = pty_system
         .openpty(PtySize {
             rows: 24,
             cols: 80,
@@ -21,14 +21,12 @@ fn main() {
 
     // Set up the command to launch Bash.
     let cmd = CommandBuilder::new("bash");
-    let mut child = pair.slave.spawn_command(cmd).unwrap();
-
-    drop(pair.slave);
+    let mut child = slave.spawn_command(cmd).unwrap();
 
     // Set up channels for reading and writing.
     let (tx, rx) = channel::<String>();
-    let mut reader = pair.master.try_clone_reader().unwrap();
-    let master_writer = pair.master.take_writer().unwrap();
+    let mut reader = master.try_clone_reader().unwrap();
+    let master_writer = master.take_writer().unwrap();
 
     // Thread to read from the PTY and send data to the main thread.
     thread::spawn(move || {
@@ -75,7 +73,7 @@ fn main() {
     println!("Bash exited with status: {:?}", status);
 }
 
-fn handle_input_stream(rx: std::sync::mpsc::Receiver<String>, mut writer: Box<dyn Write + Send>) {
+fn handle_input_stream(rx: std::sync::mpsc::Receiver<String>, mut writer: impl Write + Send) {
     for input in rx.iter() {
         if writer.write_all(input.as_bytes()).is_err() {
             eprintln!("Error writing to PTY");

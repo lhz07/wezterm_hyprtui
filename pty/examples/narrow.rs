@@ -1,13 +1,16 @@
 //! Runs a command with a fixed terminal size.
 //! This is used by wezterm's doc building automation to keep
 //! the --help output within a reasonable width
-use portable_pty::{CommandBuilder, NativePtySystem, PtySize, PtySystem};
-use std::sync::mpsc::channel;
+use portable_pty::{CommandBuilder, MasterPty, NativePtySystem, PtySize, PtySystem, SlavePty};
+use std::{
+    io::{Read, Write},
+    sync::mpsc::channel,
+};
 
 fn main() {
     let pty_system = NativePtySystem::default();
 
-    let pair = pty_system
+    let (master, slave) = pty_system
         .openpty(PtySize {
             rows: 24,
             cols: 80,
@@ -21,18 +24,14 @@ fn main() {
     let mut cmd = CommandBuilder::new(args.next().unwrap());
     cmd.args(args);
 
-    let mut child = pair.slave.spawn_command(cmd).unwrap();
-
-    // Release any handles owned by the slave: we don't need it now
-    // that we've spawned the child.
-    drop(pair.slave);
+    let mut child = slave.spawn_command(cmd).unwrap();
 
     // Read the output in another thread.
     // This is important because it is easy to encounter a situation
     // where read/write buffers fill and block either your process
     // or the spawned process.
     let (tx, rx) = channel();
-    let mut reader = pair.master.try_clone_reader().unwrap();
+    let mut reader = master.try_clone_reader().unwrap();
     std::thread::spawn(move || {
         // Consume the output from the child
         let mut s = String::new();
@@ -47,7 +46,7 @@ fn main() {
         // It is important to take the writer even if you don't
         // send anything to its stdin so that EOF can be
         // generated, otherwise you risk deadlocking yourself.
-        let mut writer = pair.master.take_writer().unwrap();
+        let mut writer = master.take_writer().unwrap();
 
         if cfg!(target_os = "macos") {
             // macOS quirk: the child and reader must be started and
@@ -81,7 +80,7 @@ fn main() {
     // Take care to drop the master after our processes are
     // done, as some platforms get unhappy if it is dropped
     // sooner than that.
-    drop(pair.master);
+    drop(master);
 
     // Now wait for the output to be read by our reader thread
     let output = rx.recv().unwrap();

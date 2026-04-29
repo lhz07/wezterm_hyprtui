@@ -6,8 +6,7 @@
 //! On most (all?) systems, attempting to open multiple instances of
 //! the same serial port will fail.
 use crate::{
-    Child, ChildKiller, CommandBuilder, ExitStatus, MasterPty, PtyPair, PtySize, PtySystem,
-    SlavePty,
+    Child, ChildKiller, CommandBuilder, ExitStatus, MasterPty, PtySize, PtySystem, SlavePty,
 };
 use anyhow::{ensure, Context};
 use filedescriptor::FileDescriptor;
@@ -64,8 +63,8 @@ impl SerialTty {
     }
 }
 
-impl PtySystem for SerialTty {
-    fn openpty(&self, _size: PtySize) -> anyhow::Result<PtyPair> {
+impl PtySystem<Master, Slave, SerialChild, Reader, MasterWriter> for SerialTty {
+    fn openpty(&self, _size: PtySize) -> anyhow::Result<(Master, Slave)> {
         let mut port = SerialPort::open(&self.port, self.baud)
             .with_context(|| format!("openpty on serial port {:?}", self.port))?;
 
@@ -88,16 +87,14 @@ impl PtySystem for SerialTty {
         port.set_write_timeout(Duration::from_millis(50))?;
 
         let port: Handle = Arc::new(port);
-
-        Ok(PtyPair {
-            slave: Box::new(Slave {
-                port: Arc::clone(&port),
-            }),
-            master: Box::new(Master {
-                port,
-                took_writer: RefCell::new(false),
-            }),
-        })
+        let slave = Slave {
+            port: Arc::clone(&port),
+        };
+        let master = Master {
+            port,
+            took_writer: RefCell::new(false),
+        };
+        Ok((master, slave))
     }
 }
 
@@ -105,15 +102,15 @@ struct Slave {
     port: Handle,
 }
 
-impl SlavePty for Slave {
-    fn spawn_command(&self, cmd: CommandBuilder) -> anyhow::Result<Box<dyn Child + Send + Sync>> {
+impl SlavePty<SerialChild> for Slave {
+    fn spawn_command(self, cmd: CommandBuilder) -> Result<SerialChild, anyhow::Error> {
         ensure!(
             cmd.is_default_prog(),
             "can only use default prog commands with serial tty implementations"
         );
-        Ok(Box::new(SerialChild {
+        Ok(SerialChild {
             port: Arc::clone(&self.port),
-        }))
+        })
     }
 }
 
@@ -219,7 +216,7 @@ impl MasterPty for Master {
         Ok(PtySize::default())
     }
 
-    fn try_clone_reader(&self) -> anyhow::Result<Box<dyn std::io::Read + Send>> {
+    fn try_clone_reader(&self) -> Result<Box<dyn std::io::Read + Send>, anyhow::Error> {
         // We rely on the fact that SystemPort implements the traits
         // that expose the underlying file descriptor, and that direct
         // reads from that return the raw data that we want
@@ -227,7 +224,7 @@ impl MasterPty for Master {
         Ok(Box::new(Reader { fd }))
     }
 
-    fn take_writer(&self) -> anyhow::Result<Box<dyn std::io::Write + Send>> {
+    fn take_writer(&self) -> Result<Box<dyn std::io::Write + Send>, anyhow::Error> {
         if *self.took_writer.borrow() {
             anyhow::bail!("cannot take writer more than once");
         }

@@ -6,14 +6,14 @@
 //! This crate is part of [wezterm](https://github.com/wezterm/wezterm).
 //!
 //! ```no_run
-//! use portable_pty::{CommandBuilder, PtySize, native_pty_system, PtySystem};
+//! use portable_pty::{CommandBuilder, PtySize, native_pty_system, PtySystem, MasterPty, SlavePty};
 //! use anyhow::Error;
 //!
 //! // Use the native pty implementation for the system
 //! let pty_system = native_pty_system();
 //!
 //! // Create a new pty
-//! let mut pair = pty_system.openpty(PtySize {
+//! let (master, slave) = pty_system.openpty(PtySize {
 //!     rows: 24,
 //!     cols: 80,
 //!     // Not all systems support pixel_width, pixel_height,
@@ -27,13 +27,13 @@
 //!
 //! // Spawn a shell into the pty
 //! let cmd = CommandBuilder::new("bash");
-//! let child = pair.slave.spawn_command(cmd)?;
+//! let child = slave.spawn_command(cmd)?;
 //!
 //! // Read and parse output from the pty with reader
-//! let mut reader = pair.master.try_clone_reader()?;
+//! let mut reader = master.try_clone_reader()?;
 //!
 //! // Send data to the pty by writing to the master
-//! writeln!(pair.master.take_writer()?, "ls -l\r\n")?;
+//! writeln!(master.take_writer()?, "ls -l\r\n")?;
 //! # Ok::<(), Error>(())
 //! ```
 //!
@@ -92,6 +92,7 @@ pub trait MasterPty: Downcast + Send {
     fn resize(&self, size: PtySize) -> Result<(), Error>;
     /// Retrieves the size of the pty as known by the kernel
     fn get_size(&self) -> Result<PtySize, Error>;
+
     /// Obtain a readable handle; output from the slave(s) is readable
     /// via this stream.
     fn try_clone_reader(&self) -> Result<Box<dyn std::io::Read + Send>, Error>;
@@ -100,7 +101,6 @@ pub trait MasterPty: Downcast + Send {
     /// Dropping the writer will send EOF to the slave end.
     /// It is invalid to take the writer more than once.
     fn take_writer(&self) -> Result<Box<dyn std::io::Write + Send>, Error>;
-
     /// If applicable to the type of the tty, return the local process id
     /// of the process group or session leader
     #[cfg(unix)]
@@ -123,7 +123,6 @@ pub trait MasterPty: Downcast + Send {
         None
     }
 }
-impl_downcast!(MasterPty);
 
 /// Represents a child process spawned into the pty.
 /// This handle can be used to wait for or terminate that child process.
@@ -160,9 +159,12 @@ impl_downcast!(ChildKiller);
 
 /// Represents the slave side of a pty.
 /// Can be used to spawn processes into the pty.
-pub trait SlavePty {
+pub trait SlavePty<C>
+where
+    C: Child + Send + Sync,
+{
     /// Spawns the command specified by the provided CommandBuilder
-    fn spawn_command(&self, cmd: CommandBuilder) -> Result<Box<dyn Child + Send + Sync>, Error>;
+    fn spawn_command(self, cmd: CommandBuilder) -> Result<C, Error>;
 }
 
 /// Represents the exit status of a child process.
@@ -250,23 +252,29 @@ impl std::fmt::Display for ExitStatus {
     }
 }
 
-pub struct PtyPair {
+pub struct PtyPair<M, S> {
     // slave is listed first so that it is dropped first.
     // The drop order is stable and specified by rust rfc 1857
-    pub slave: Box<dyn SlavePty + Send>,
-    pub master: Box<dyn MasterPty + Send>,
+    pub slave: S,
+    pub master: M,
 }
 
 /// The `PtySystem` trait allows an application to work with multiple
 /// possible Pty implementations at runtime.  This is important on
 /// Windows systems which have a variety of implementations.
-pub trait PtySystem: Downcast {
+pub trait PtySystem<M, S, C, R, W>
+where
+    M: MasterPty,
+    S: SlavePty<C>,
+    C: Child + Send + Sync,
+    R: std::io::Read + Send + 'static,
+    W: std::io::Write + Send + 'static,
+{
     /// Create a new Pty instance with the window size set to the specified
     /// dimensions.  Returns a (master, slave) Pty pair.  The master side
     /// is used to drive the slave side.
-    fn openpty(&self, size: PtySize) -> anyhow::Result<PtyPair>;
+    fn openpty(&self, size: PtySize) -> anyhow::Result<(M, S)>;
 }
-impl_downcast!(PtySystem);
 
 impl Child for std::process::Child {
     fn try_wait(&mut self) -> IoResult<Option<ExitStatus>> {
@@ -397,8 +405,8 @@ impl ChildKiller for std::process::Child {
     }
 }
 
-pub fn native_pty_system() -> Box<dyn PtySystem + Send> {
-    Box::new(NativePtySystem::default())
+pub fn native_pty_system() -> NativePtySystem {
+    NativePtySystem::default()
 }
 
 #[cfg(unix)]
