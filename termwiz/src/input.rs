@@ -9,6 +9,7 @@ use crate::keymap::{Found, KeyMap};
 use crate::readbuf::ReadBuffer;
 #[cfg(feature = "use_serde")]
 use serde::{Deserialize, Serialize};
+use std::convert::TryFrom;
 use std::fmt::Write;
 use wezterm_input_types::ctrl_mapping;
 
@@ -615,6 +616,120 @@ fn csi_u_encode(
     }
     write!(buf, "{}", c)?;
     Ok(())
+}
+
+impl TryFrom<wezterm_input_types::KeyCode> for KeyCode {
+    type Error = ();
+    fn try_from(value: wezterm_input_types::KeyCode) -> std::result::Result<Self, Self::Error> {
+        /// 对于无法映射的变体（如 Composed、RawCode、Physical、VoidSymbol）返回 Err。
+        use wezterm_input_types::KeyCode as S;
+        use KeyCode as D;
+
+        let key = match value {
+            // 直通映射
+            S::Char(c) => match c {
+                // 将常见控制字符映射为目标枚举中的专用变体，这更符合 wezterm 内部约定
+                '\x08' => D::Backspace,
+                '\x7f' => D::Delete,
+                '\t' => D::Tab,
+                '\r' => D::Enter,
+                '\x1b' => D::Escape,
+                other => D::Char(other),
+            },
+            S::Hyper => D::Hyper,
+            S::Super => D::Super,
+            S::Meta => D::Meta,
+            S::Cancel => D::Cancel,
+            S::Clear => D::Clear,
+            S::Shift => D::Shift,
+            S::LeftShift => D::LeftShift,
+            S::RightShift => D::RightShift,
+            S::Control => D::Control,
+            S::LeftControl => D::LeftControl,
+            S::RightControl => D::RightControl,
+            S::Alt => D::Alt,
+            S::LeftAlt => D::LeftAlt,
+            S::RightAlt => D::RightAlt,
+            S::Pause => D::Pause,
+            S::CapsLock => D::CapsLock,
+            S::PageUp => D::PageUp,
+            S::PageDown => D::PageDown,
+            S::End => D::End,
+            S::Home => D::Home,
+            S::LeftArrow => D::LeftArrow,
+            S::RightArrow => D::RightArrow,
+            S::UpArrow => D::UpArrow,
+            S::DownArrow => D::DownArrow,
+            S::Select => D::Select,
+            S::Print => D::Print,
+            S::Execute => D::Execute,
+            S::PrintScreen => D::PrintScreen,
+            S::Insert => D::Insert,
+            // Delete 在源中不存在，已通过 Char('\x7f') 处理
+            S::Help => D::Help,
+            S::LeftWindows => D::LeftWindows,
+            S::RightWindows => D::RightWindows,
+            S::Applications => D::Applications,
+            S::Sleep => D::Sleep,
+            S::Multiply => D::Multiply,
+            S::Add => D::Add,
+            S::Separator => D::Separator,
+            S::Subtract => D::Subtract,
+            S::Decimal => D::Decimal,
+            S::Divide => D::Divide,
+            S::NumLock => D::NumLock,
+            S::ScrollLock => D::ScrollLock,
+            S::Copy => D::Copy,
+            S::Cut => D::Cut,
+            S::Paste => D::Paste,
+            S::BrowserBack => D::BrowserBack,
+            S::BrowserForward => D::BrowserForward,
+            S::BrowserRefresh => D::BrowserRefresh,
+            S::BrowserStop => D::BrowserStop,
+            S::BrowserSearch => D::BrowserSearch,
+            S::BrowserFavorites => D::BrowserFavorites,
+            S::BrowserHome => D::BrowserHome,
+            S::VolumeMute => D::VolumeMute,
+            S::VolumeDown => D::VolumeDown,
+            S::VolumeUp => D::VolumeUp,
+            S::MediaNextTrack => D::MediaNextTrack,
+            S::MediaPrevTrack => D::MediaPrevTrack,
+            S::MediaStop => D::MediaStop,
+            S::MediaPlayPause => D::MediaPlayPause,
+            S::ApplicationLeftArrow => D::ApplicationLeftArrow,
+            S::ApplicationRightArrow => D::ApplicationRightArrow,
+            S::ApplicationUpArrow => D::ApplicationUpArrow,
+            S::ApplicationDownArrow => D::ApplicationDownArrow,
+            S::KeyPadHome => D::KeyPadHome,
+            S::KeyPadEnd => D::KeyPadEnd,
+            S::KeyPadPageUp => D::KeyPadPageUp,
+            S::KeyPadPageDown => D::KeyPadPageDown,
+            S::KeyPadBegin => D::KeyPadBegin,
+
+            S::Numpad(n) => match n {
+                0 => D::Numpad0,
+                1 => D::Numpad1,
+                2 => D::Numpad2,
+                3 => D::Numpad3,
+                4 => D::Numpad4,
+                5 => D::Numpad5,
+                6 => D::Numpad6,
+                7 => D::Numpad7,
+                8 => D::Numpad8,
+                9 => D::Numpad9,
+                _ => return Err(()), // 非法数值
+            },
+
+            // 功能键（F1-F24）
+            S::Function(n) if n <= 24 => D::Function(n),
+
+            // 无法映射的变体
+            S::Composed(_) | S::RawCode(_) | S::Physical(_) | S::VoidSymbol | S::Function(_) => {
+                return Err(());
+            }
+        };
+        Ok(key)
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -1,7 +1,9 @@
 use crate::input::*;
 use crate::TerminalState;
+use std::convert::TryInto;
 use std::io::Write;
 use termwiz::input::{KeyCodeEncodeModes, KeyboardEncoding};
+use wezterm_input_types::KeyEvent;
 
 impl TerminalState {
     fn effective_keyboard_encoding(&self) -> KeyboardEncoding {
@@ -14,6 +16,7 @@ impl TerminalState {
             KeyboardEncoding::Xterm if self.config.enable_csi_u_key_encoding() => {
                 KeyboardEncoding::CsiU
             }
+
             enc => *enc,
         }
     }
@@ -63,5 +66,49 @@ impl TerminalState {
 
     pub fn key_down(&mut self, key: KeyCode, mods: KeyModifiers) -> anyhow::Result<()> {
         self.key_up_down(key, mods, true)
+    }
+
+    pub fn send_key(&mut self, event: KeyEvent) -> anyhow::Result<()> {
+        match self.effective_keyboard_encoding() {
+            KeyboardEncoding::Kitty(flags) => {
+                let to_send = event.encode_kitty(flags);
+
+                if to_send.is_empty() {
+                    return Ok(());
+                }
+
+                let label = if event.key_is_down {
+                    "key_down"
+                } else {
+                    "key_up"
+                };
+                if self.config.debug_key_events() {
+                    log::info!(
+                        "{}: sending {:?}, {:?} {:?}",
+                        label,
+                        to_send,
+                        event.key,
+                        event.modifiers
+                    );
+                } else {
+                    log::trace!(
+                        "{}: sending {:?}, {:?} {:?}",
+                        label,
+                        to_send,
+                        event.key,
+                        event.modifiers
+                    );
+                }
+                self.writer.write_all(to_send.as_bytes())?;
+                self.writer.flush()?;
+            }
+            _ => {
+                let Ok(key) = event.key.try_into() else {
+                    return Ok(());
+                };
+                self.key_up_down(key, event.modifiers, event.key_is_down)?;
+            }
+        }
+        Ok(())
     }
 }
