@@ -23,7 +23,7 @@ impl<'a> CellRef<'a> {
         }
     }
 
-    pub fn str(&self) -> &str {
+    pub fn str(&self) -> &'a str {
         match self {
             Self::CellRef { cell, .. } => cell.str(),
             Self::ClusterRef { text, .. } => text,

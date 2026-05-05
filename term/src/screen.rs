@@ -906,6 +906,16 @@ impl Screen {
             .collect()
     }
 
+    pub fn lines_in_phys_range_iter(
+        &self,
+        phys_range: Range<PhysRowIndex>,
+    ) -> std::iter::Take<std::iter::Skip<std::collections::vec_deque::Iter<'_, Line>>> {
+        self.lines
+            .iter()
+            .skip(phys_range.start)
+            .take(phys_range.end - phys_range.start)
+    }
+
     pub fn get_changed_stable_rows(
         &self,
         stable_lines: Range<StableRowIndex>,
